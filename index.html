@@ -290,9 +290,55 @@
   .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
 
   ::placeholder{color:#5C6167;}
+
+  /* ---- Auth gate ---- */
+  #auth-gate{
+    position:fixed;inset:0;background:var(--bg);z-index:100;
+    display:flex;align-items:center;justify-content:center;padding:24px;
+  }
+  .auth-box{width:100%;max-width:360px;}
+  .auth-eyebrow{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;color:var(--copper);
+    text-transform:uppercase;margin:0 0 4px 0;
+  }
+  .auth-box h1{
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:28px;margin:0 0 6px 0;
+  }
+  .auth-box .sub{color:var(--muted);font-size:13px;margin-bottom:22px;}
+  .auth-field{margin-bottom:14px;}
+  .auth-field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;}
+  .auth-error{
+    color:var(--danger);font-size:12.5px;margin:-4px 0 14px 0;min-height:1px;
+  }
+  .auth-links{display:flex;justify-content:space-between;margin-top:14px;font-size:12.5px;}
+  .auth-links button{background:none;border:none;color:var(--steel);cursor:pointer;font-size:12.5px;padding:0;text-decoration:underline;}
+  .signout-btn{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;padding:0;}
 </style>
 </head>
 <body>
+
+<!-- ============ AUTH GATE (shown until signed in) ============ -->
+<div id="auth-gate">
+  <div class="auth-box">
+    <p class="auth-eyebrow">AVO · Dimensional Reference</p>
+    <h1>Sign in</h1>
+    <p class="sub">Brush Spec is private — sign in with the account set up for your team.</p>
+    <div class="auth-field">
+      <label>Email</label>
+      <input type="text" id="auth-email" placeholder="you@example.com" autocomplete="username">
+    </div>
+    <div class="auth-field">
+      <label>Password</label>
+      <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div class="auth-error" id="auth-error"></div>
+    <button class="btn-primary" onclick="signIn()">Sign in</button>
+    <div class="auth-links">
+      <button onclick="forgotPassword()">Forgot password?</button>
+    </div>
+  </div>
+</div>
+
 <div class="app">
 
   <!-- ============ HOME ============ -->
@@ -323,7 +369,7 @@
         <button class="btn-secondary" onclick="document.getElementById('import-input').click()">⇧ Import</button>
         <input type="file" id="import-input" accept="application/json" style="display:none;">
       </div>
-      <div class="whoami">Logging edits as <b id="whoami-name">—</b> · <button onclick="promptUserName()">change</button></div>
+      <div class="whoami">Logging edits as <b id="whoami-name">—</b> · <button onclick="promptUserName()">change</button> · <span id="auth-account"></span> <button class="signout-btn" onclick="signOutUser()">sign out</button></div>
       <div id="grid" class="grid"></div>
       <div id="empty" class="empty" style="display:none;">
         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
@@ -430,6 +476,7 @@
 <!-- Firebase (compat build so we can keep plain global functions / inline onclick) -->
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 
 <script>
 /* =========================================================================
@@ -482,14 +529,74 @@ function ensureUserName(){
 }
 
 /* ---------------- Firebase init ---------------- */
+let auth = null;
 if(CONFIG_OK){
   try{
     firebase.initializeApp(firebaseConfig);
     db = firebase.firestore();
+    auth = firebase.auth();
   }catch(e){
     console.error('Firebase init failed', e);
     db = null;
+    auth = null;
   }
+}
+
+/* ---------------- Auth gate ---------------- */
+function showAuthGate(msg){
+  document.getElementById('auth-gate').style.display = 'flex';
+  document.getElementById('auth-error').textContent = msg || '';
+  if(unsubscribeSnapshot){ unsubscribeSnapshot(); unsubscribeSnapshot = null; }
+}
+function hideAuthGate(){
+  document.getElementById('auth-gate').style.display = 'none';
+}
+function authErrorMessage(code){
+  const map = {
+    'auth/invalid-email': 'That email address looks wrong.',
+    'auth/user-not-found': 'No account with that email.',
+    'auth/wrong-password': 'Wrong password.',
+    'auth/invalid-credential': 'Email or password is incorrect.',
+    'auth/too-many-requests': 'Too many attempts — wait a bit and try again.',
+    'auth/missing-password': 'Enter a password.'
+  };
+  return map[code] || 'Sign-in failed. Check your email and password.';
+}
+function signIn(){
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  document.getElementById('auth-error').textContent = '';
+  if(!email || !password){
+    document.getElementById('auth-error').textContent = 'Enter both email and password.';
+    return;
+  }
+  if(!auth){ document.getElementById('auth-error').textContent = 'Firebase not configured.'; return; }
+  auth.signInWithEmailAndPassword(email, password).catch(err => {
+    document.getElementById('auth-error').textContent = authErrorMessage(err.code);
+  });
+}
+function signOutUser(){
+  if(auth) auth.signOut();
+}
+function forgotPassword(){
+  const email = document.getElementById('auth-email').value.trim();
+  if(!email){ document.getElementById('auth-error').textContent = 'Enter your email above first, then tap "Forgot password?" again.'; return; }
+  if(!auth) return;
+  auth.sendPasswordResetEmail(email)
+    .then(() => { document.getElementById('auth-error').style.color = 'var(--ok)'; document.getElementById('auth-error').textContent = 'Reset email sent — check your inbox.'; })
+    .catch(err => { document.getElementById('auth-error').style.color = 'var(--danger)'; document.getElementById('auth-error').textContent = authErrorMessage(err.code); });
+}
+
+if(CONFIG_OK && auth){
+  auth.onAuthStateChanged(user => {
+    if(user){
+      hideAuthGate();
+      document.getElementById('auth-account').textContent = user.email + ' ·';
+      startListening();
+    } else {
+      showAuthGate();
+    }
+  });
 }
 
 function setConnDot(state){
@@ -1029,7 +1136,11 @@ document.getElementById('import-input').addEventListener('change', async functio
 
 /* ---------------- Boot ---------------- */
 document.getElementById('whoami-name').textContent = getUserName() || 'Unknown';
-startListening();
+if(!CONFIG_OK || !auth){
+  // No Firebase / no auth available — skip the login gate and run in local-memory mode.
+  hideAuthGate();
+  startListening();
+}
 </script>
 </body>
 </html>
