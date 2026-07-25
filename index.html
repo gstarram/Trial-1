@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Brush Spec — Dimensional Reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14171A;
+    --panel: #1E2226;
+    --panel-2: #262B30;
+    --line: #33393F;
+    --copper: #C97A4D;
+    --copper-dim: #8F5836;
+    --steel: #4C8CA8;
+    --ink: #EDEAE3;
+    --muted: #8A9096;
+    --ok: #6FAE7C;
+    --warn: #D9A441;
+    --danger: #C25B4F;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    min-height:100vh;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;position:relative;}
+
+  /* ---- Ruler / tick divider signature element ---- */
+  .ruler{
+    height:14px;width:100%;
+    background-image:repeating-linear-gradient(
+      to right,
+      var(--line) 0, var(--line) 1px,
+      transparent 1px, transparent 8px
+    );
+    background-size: 40px 100%;
+    opacity:.55;
+    position:relative;
+  }
+  .ruler::before{
+    content:"";
+    position:absolute;top:0;left:0;right:0;height:1px;
+    background:var(--line);
+  }
+
+  /* ---- Header ---- */
+  header{
+    padding:22px 20px 14px 20px;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#181B1F,#14171A);
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;letter-spacing:.14em;color:var(--copper);
+    text-transform:uppercase;margin:0 0 4px 0;
+  }
+  h1{
+    font-family:'Barlow Condensed',sans-serif;
+    font-weight:700;font-size:30px;letter-spacing:.01em;
+    margin:0;line-height:1;
+  }
+  .sub{color:var(--muted);font-size:13px;margin-top:6px;}
+
+  main{flex:1;padding:16px 16px 100px 16px;}
+
+  /* ---- Search ---- */
+  .search-wrap{position:relative;margin-bottom:16px;}
+  .search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.5;}
+  input[type="text"], input[type="number"]{
+    width:100%;background:var(--panel);border:1px solid var(--line);
+    color:var(--ink);border-radius:8px;padding:12px 12px 12px 38px;
+    font-family:'Inter',sans-serif;font-size:15px;outline:none;
+  }
+  input[type="text"]:focus, input[type="number"]:focus{border-color:var(--copper);}
+  .search-wrap input{padding-left:38px;}
+
+  /* ---- Part grid ---- */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    overflow:hidden;cursor:pointer;transition:border-color .15s, transform .1s;
+  }
+  .card:active{transform:scale(.98);}
+  .card:hover{border-color:var(--copper-dim);}
+  .card-img{
+    width:100%;aspect-ratio:1/1;background:var(--panel-2);
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+  }
+  .card-img img{width:100%;height:100%;object-fit:cover;display:block;}
+  .card-img svg{opacity:.25;}
+  .card-body{padding:10px 10px 12px 10px;}
+  .card-part{
+    font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;
+    color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .card-meta{font-size:11px;color:var(--muted);margin-top:3px;}
+
+  .empty{
+    text-align:center;padding:60px 20px;color:var(--muted);
+  }
+  .empty svg{opacity:.3;margin-bottom:12px;}
+  .empty p{font-size:14px;margin:4px 0;}
+
+  /* ---- FAB ---- */
+  .fab{
+    position:fixed;bottom:24px;left:50%;
+    transform:translateX(calc(-50% + 0px));
+    max-width:480px;width:calc(100% - 32px);
+    margin:0 16px;
+  }
+  .fab-inner{max-width:448px;margin:0 auto;}
+  .btn-primary{
+    width:100%;background:var(--copper);color:#1A130D;border:none;border-radius:10px;
+    padding:15px;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:17px;
+    letter-spacing:.02em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+    box-shadow:0 8px 24px rgba(201,122,77,.25);
+  }
+  .btn-primary:active{transform:scale(.98);}
+  .btn-secondary{
+    width:100%;background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:10px;
+    padding:14px;font-family:'Inter',sans-serif;font-weight:500;font-size:14px;cursor:pointer;
+  }
+  .btn-danger{
+    background:transparent;color:var(--danger);border:1px solid var(--danger);border-radius:8px;
+    padding:10px 14px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;
+  }
+
+  /* ---- Detail / Form screens ---- */
+  .screen{display:none;}
+  .screen.active{display:block;}
+
+  .topbar{
+    display:flex;align-items:center;gap:10px;padding:16px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;background:var(--bg);z-index:5;
+  }
+  .back-btn{
+    background:var(--panel);border:1px solid var(--line);border-radius:8px;
+    width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;flex-shrink:0;color:var(--ink);
+  }
+  .topbar-title{
+    font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:20px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+
+  .detail-img{
+    width:100%;aspect-ratio:4/3;background:var(--panel);
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+    border-bottom:1px solid var(--line);
+  }
+  .detail-img img{width:100%;height:100%;object-fit:contain;}
+  .detail-img svg{opacity:.25;}
+
+  .section-label{
+    display:flex;align-items:center;gap:8px;
+    font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:18px;
+    padding:18px 16px 8px 16px;
+  }
+  .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .dot-piling{background:var(--copper);}
+  .dot-grinding{background:var(--steel);}
+
+  .spec-table{margin:0 16px 8px 16px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+  .spec-row{display:flex;justify-content:space-between;padding:11px 14px;font-size:14px;}
+  .spec-row + .spec-row{border-top:1px solid var(--line);}
+  .spec-key{color:var(--muted);}
+  .spec-val{font-family:'IBM Plex Mono',monospace;font-weight:600;}
+  .spec-note{margin:8px 16px 0 16px;color:var(--muted);font-size:12.5px;font-style:italic;}
+
+  .part-header{padding:16px;}
+  .part-title{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;}
+  .part-updated{color:var(--muted);font-size:12px;margin-top:4px;}
+
+  .field{padding:12px 16px 0 16px;}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;letter-spacing:.02em;}
+  .field-row{display:flex;gap:10px;}
+  .field-row .field{flex:1;padding-left:0;}
+  .field-row .field:first-child{padding-left:16px;}
+  textarea{
+    width:100%;background:var(--panel);border:1px solid var(--line);color:var(--ink);
+    border-radius:8px;padding:12px;font-family:'Inter',sans-serif;font-size:14px;resize:vertical;min-height:60px;outline:none;
+  }
+  textarea:focus{border-color:var(--copper);}
+
+  .upload-box{
+    margin:0 16px;border:1.5px dashed var(--line);border-radius:10px;
+    padding:20px;text-align:center;cursor:pointer;color:var(--muted);font-size:13px;
+    background:var(--panel);position:relative;overflow:hidden;
+  }
+  .upload-box.has-img{padding:0;border-style:solid;}
+  .upload-box img{width:100%;display:block;max-height:220px;object-fit:contain;background:#0000;}
+  .upload-box input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+
+  .form-section{margin-top:8px;}
+  .form-actions{padding:20px 16px 0 16px;display:flex;flex-direction:column;gap:10px;}
+
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:var(--panel-2);border:1px solid var(--ok);color:var(--ink);
+    padding:10px 18px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;
+    transition:opacity .25s, transform .25s;z-index:50;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+
+  ::placeholder{color:#5C6167;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ HOME ============ -->
+  <div class="screen active" id="screen-home">
+    <header>
+      <p class="eyebrow">AVO · Dimensional Reference</p>
+      <h1>Brush Spec</h1>
+      <p class="sub">Piling &amp; grinding measurements, by part number.</p>
+    </header>
+    <div class="ruler"></div>
+    <main>
+      <div class="search-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" id="search" placeholder="Search part number…" autocomplete="off">
+      </div>
+      <div id="grid" class="grid"></div>
+      <div id="empty" class="empty" style="display:none;">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <p><strong>No parts yet.</strong></p>
+        <p>Tap "Insert Data" to add your first spec.</p>
+      </div>
+    </main>
+    <div class="fab"><div class="fab-inner">
+      <button class="btn-primary" onclick="openForm()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+        Insert Data
+      </button>
+    </div></div>
+  </div>
+
+  <!-- ============ DETAIL ============ -->
+  <div class="screen" id="screen-detail">
+    <div class="topbar">
+      <button class="back-btn" onclick="goHome()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="topbar-title" id="detail-title">Part</div>
+    </div>
+    <div class="detail-img" id="detail-img"></div>
+    <div class="part-header">
+      <div class="part-title" id="detail-part"></div>
+      <div class="part-updated" id="detail-updated"></div>
+    </div>
+
+    <div class="section-label"><span class="dot dot-piling"></span>Piling</div>
+    <div class="spec-table" id="detail-piling"></div>
+    <div class="spec-note" id="detail-piling-note"></div>
+
+    <div class="section-label"><span class="dot dot-grinding"></span>Grinding</div>
+    <div class="spec-table" id="detail-grinding"></div>
+    <div class="spec-note" id="detail-grinding-note"></div>
+
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="editCurrent()">Edit spec</button>
+      <button class="btn-danger" onclick="deleteCurrent()">Delete part</button>
+    </div>
+  </div>
+
+  <!-- ============ FORM (Insert / Edit) ============ -->
+  <div class="screen" id="screen-form">
+    <div class="topbar">
+      <button class="back-btn" onclick="cancelForm()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="topbar-title" id="form-title">Insert Data</div>
+    </div>
+
+    <div class="field">
+      <label>Part number</label>
+      <input type="text" id="f-part" placeholder="e.g. OFBC-028">
+    </div>
+
+    <div class="field" style="margin-top:6px;">
+      <label>Component image</label>
+    </div>
+    <div class="upload-box" id="upload-box" onclick="document.getElementById('f-image').click()">
+      <div id="upload-placeholder">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        <div style="margin-top:6px;">Tap to upload image</div>
+      </div>
+      <img id="upload-preview" style="display:none;">
+      <input type="file" id="f-image" accept="image/*">
+    </div>
+
+    <div class="form-section">
+      <div class="section-label"><span class="dot dot-piling"></span>Piling data</div>
+      <div class="field-row">
+        <div class="field"><label>Thickness (mm)</label><input type="number" step="any" id="p-thickness"></div>
+        <div class="field"><label>Height (mm)</label><input type="number" step="any" id="p-height"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Width (mm)</label><input type="number" step="any" id="p-width"></div>
+        <div class="field"><label>Length (mm)</label><input type="number" step="any" id="p-length"></div>
+      </div>
+      <div class="field"><label>Notes / etc.</label><textarea id="p-notes" placeholder="Any additional piling notes…"></textarea></div>
+    </div>
+
+    <div class="form-section">
+      <div class="section-label"><span class="dot dot-grinding"></span>Grinding data</div>
+      <div class="field-row">
+        <div class="field"><label>Thickness (mm)</label><input type="number" step="any" id="g-thickness"></div>
+        <div class="field"><label>Height (mm)</label><input type="number" step="any" id="g-height"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Width (mm)</label><input type="number" step="any" id="g-width"></div>
+        <div class="field"><label>Length (mm)</label><input type="number" step="any" id="g-length"></div>
+      </div>
+      <div class="field"><label>Notes / etc.</label><textarea id="g-notes" placeholder="Any additional grinding notes…"></textarea></div>
+    </div>
+
+    <div class="form-actions" style="padding-bottom:40px;">
+      <button class="btn-primary" onclick="saveForm()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg>
+        Save
+      </button>
+      <button class="btn-secondary" onclick="cancelForm()">Cancel</button>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+let parts = {};          // partNumber -> record
+let currentPart = null;  // part number being viewed
+let editingOriginal = null; // part number being edited (for rename handling)
+let pendingImageData = null;
+
+const INDEX_KEY = 'parts-index';
+
+// Fallback shim: if window.storage isn't available (or errors out) in this
+// environment, fall back to an in-memory store so the app still works for
+// the current session, instead of silently failing on save.
+if(typeof window.storage === 'undefined'){
+  console.warn('window.storage not found — using in-memory fallback (data will not persist between sessions).');
+  window._memStore = {};
+  window.storage = {
+    async get(key){
+      if(!(key in window._memStore)) throw new Error('not found');
+      return { key, value: window._memStore[key] };
+    },
+    async set(key, value){
+      window._memStore[key] = value;
+      return { key, value };
+    },
+    async delete(key){
+      delete window._memStore[key];
+      return { key, deleted: true };
+    },
+    async list(prefix){
+      return { keys: Object.keys(window._memStore).filter(k => !prefix || k.startsWith(prefix)) };
+    }
+  };
+  window._usingFallbackStorage = true;
+}
+
+function keyFor(p){ return 'part:' + p; }
+
+async function loadAll(){
+  try{
+    const idx = await window.storage.get(INDEX_KEY);
+    const list = idx ? JSON.parse(idx.value) : [];
+    for(const p of list){
+      try{
+        const rec = await window.storage.get(keyFor(p));
+        if(rec) parts[p] = JSON.parse(rec.value);
+      }catch(e){ /* missing record, skip */ }
+    }
+  }catch(e){ /* no index yet */ }
+  renderGrid();
+}
+
+async function saveIndex(){
+  await window.storage.set(INDEX_KEY, JSON.stringify(Object.keys(parts)));
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function goHome(){ showScreen('screen-home'); renderGrid(); }
+
+function placeholderSVG(){
+  return '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
+}
+
+function renderGrid(){
+  const grid = document.getElementById('grid');
+  const empty = document.getElementById('empty');
+  const q = (document.getElementById('search').value || '').trim().toLowerCase();
+  const keys = Object.keys(parts).sort();
+  const filtered = keys.filter(k => k.toLowerCase().includes(q));
+  grid.innerHTML = '';
+  if(filtered.length === 0){
+    empty.style.display = 'block';
+    grid.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  grid.style.display = 'grid';
+  for(const p of filtered){
+    const rec = parts[p];
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.onclick = () => openDetail(p);
+    card.innerHTML = `
+      <div class="card-img">${rec.image ? `<img src="${rec.image}">` : placeholderSVG()}</div>
+      <div class="card-body">
+        <div class="card-part">${escapeHtml(p)}</div>
+        <div class="card-meta">${rec.updated ? new Date(rec.updated).toLocaleDateString() : ''}</div>
+      </div>`;
+    grid.appendChild(card);
+  }
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+document.getElementById('search').addEventListener('input', renderGrid);
+
+function specRow(k, v){
+  return `<div class="spec-row"><span class="spec-key">${k}</span><span class="spec-val">${(v===''||v===undefined||v===null) ? '—' : v + ' mm'}</span></div>`;
+}
+
+function openDetail(p){
+  currentPart = p;
+  const rec = parts[p];
+  document.getElementById('detail-title').textContent = p;
+  document.getElementById('detail-part').textContent = p;
+  document.getElementById('detail-updated').textContent = rec.updated ? 'Updated ' + new Date(rec.updated).toLocaleString() : '';
+  document.getElementById('detail-img').innerHTML = rec.image ? `<img src="${rec.image}">` : placeholderSVG();
+
+  const pil = rec.piling || {};
+  const gri = rec.grinding || {};
+  document.getElementById('detail-piling').innerHTML =
+    specRow('Thickness', pil.thickness) + specRow('Height', pil.height) + specRow('Width', pil.width) + specRow('Length', pil.length);
+  document.getElementById('detail-piling-note').textContent = pil.notes || '';
+  document.getElementById('detail-grinding').innerHTML =
+    specRow('Thickness', gri.thickness) + specRow('Height', gri.height) + specRow('Width', gri.width) + specRow('Length', gri.length);
+  document.getElementById('detail-grinding-note').textContent = gri.notes || '';
+
+  showScreen('screen-detail');
+}
+
+function openForm(){
+  editingOriginal = null;
+  pendingImageData = null;
+  document.getElementById('form-title').textContent = 'Insert Data';
+  document.getElementById('f-part').value = '';
+  document.getElementById('f-part').disabled = false;
+  ['p-thickness','p-height','p-width','p-length','p-notes','g-thickness','g-height','g-width','g-length','g-notes'].forEach(id=>{
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('upload-preview').style.display = 'none';
+  document.getElementById('upload-placeholder').style.display = 'block';
+  document.getElementById('upload-box').classList.remove('has-img');
+  document.getElementById('f-image').value = '';
+  showScreen('screen-form');
+}
+
+function editCurrent(){
+  const p = currentPart;
+  const rec = parts[p];
+  editingOriginal = p;
+  pendingImageData = rec.image || null;
+  document.getElementById('form-title').textContent = 'Edit Spec';
+  document.getElementById('f-part').value = p;
+  document.getElementById('f-part').disabled = false;
+  const pil = rec.piling || {}, gri = rec.grinding || {};
+  document.getElementById('p-thickness').value = pil.thickness ?? '';
+  document.getElementById('p-height').value = pil.height ?? '';
+  document.getElementById('p-width').value = pil.width ?? '';
+  document.getElementById('p-length').value = pil.length ?? '';
+  document.getElementById('p-notes').value = pil.notes ?? '';
+  document.getElementById('g-thickness').value = gri.thickness ?? '';
+  document.getElementById('g-height').value = gri.height ?? '';
+  document.getElementById('g-width').value = gri.width ?? '';
+  document.getElementById('g-length').value = gri.length ?? '';
+  document.getElementById('g-notes').value = gri.notes ?? '';
+  if(rec.image){
+    document.getElementById('upload-preview').src = rec.image;
+    document.getElementById('upload-preview').style.display = 'block';
+    document.getElementById('upload-placeholder').style.display = 'none';
+    document.getElementById('upload-box').classList.add('has-img');
+  } else {
+    document.getElementById('upload-preview').style.display = 'none';
+    document.getElementById('upload-placeholder').style.display = 'block';
+    document.getElementById('upload-box').classList.remove('has-img');
+  }
+  document.getElementById('f-image').value = '';
+  showScreen('screen-form');
+}
+
+function cancelForm(){
+  if(editingOriginal){ openDetail(editingOriginal); }
+  else { goHome(); }
+}
+
+document.getElementById('f-image').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    const img = new Image();
+    img.onload = function(){
+      // resize/compress to keep under storage limits
+      const maxDim = 900;
+      let w = img.width, h = img.height;
+      if(w > h && w > maxDim){ h = h * (maxDim/w); w = maxDim; }
+      else if(h > maxDim){ w = w * (maxDim/h); h = maxDim; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      pendingImageData = dataUrl;
+      document.getElementById('upload-preview').src = dataUrl;
+      document.getElementById('upload-preview').style.display = 'block';
+      document.getElementById('upload-placeholder').style.display = 'none';
+      document.getElementById('upload-box').classList.add('has-img');
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+async function saveForm(){
+  const p = document.getElementById('f-part').value.trim();
+  if(!p){ showToast('Enter a part number'); return; }
+  if(!editingOriginal && parts[p]){ showToast('Part number already exists'); return; }
+
+  const rec = {
+    image: pendingImageData || null,
+    piling: {
+      thickness: document.getElementById('p-thickness').value,
+      height: document.getElementById('p-height').value,
+      width: document.getElementById('p-width').value,
+      length: document.getElementById('p-length').value,
+      notes: document.getElementById('p-notes').value.trim()
+    },
+    grinding: {
+      thickness: document.getElementById('g-thickness').value,
+      height: document.getElementById('g-height').value,
+      width: document.getElementById('g-width').value,
+      length: document.getElementById('g-length').value,
+      notes: document.getElementById('g-notes').value.trim()
+    },
+    updated: Date.now()
+  };
+
+  try{
+    // handle rename: if editing and part number changed, remove old key
+    if(editingOriginal && editingOriginal !== p){
+      await window.storage.delete(keyFor(editingOriginal));
+      delete parts[editingOriginal];
+    }
+    await window.storage.set(keyFor(p), JSON.stringify(rec));
+    parts[p] = rec;
+    await saveIndex();
+    showToast('Saved ' + p);
+    currentPart = p;
+    goHome();
+  }catch(e){
+    showToast('Save failed: ' + (e && e.message ? e.message : 'unknown error'));
+    console.error(e);
+  }
+}
+
+async function deleteCurrent(){
+  if(!currentPart) return;
+  if(!confirm('Delete spec for ' + currentPart + '? This cannot be undone.')) return;
+  try{
+    await window.storage.delete(keyFor(currentPart));
+    delete parts[currentPart];
+    await saveIndex();
+    showToast('Deleted');
+    goHome();
+  }catch(e){
+    showToast('Delete failed');
+    console.error(e);
+  }
+}
+
+loadAll();
+if(window._usingFallbackStorage){
+  setTimeout(()=>showToast('Note: persistent storage unavailable — data will reset if you close this'), 600);
+}
+</script>
+</body>
+</html>
