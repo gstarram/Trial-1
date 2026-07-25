@@ -60,7 +60,11 @@
     font-family:'IBM Plex Mono',monospace;
     font-size:11px;letter-spacing:.14em;color:var(--copper);
     text-transform:uppercase;margin:0 0 4px 0;
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
   }
+  .conn-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;box-shadow:0 0 0 3px rgba(0,0,0,0);}
+  .conn-dot.live{background:var(--ok);box-shadow:0 0 0 3px rgba(111,174,124,.15);}
+  .conn-dot.off{background:var(--danger);}
   h1{
     font-family:'Barlow Condensed',sans-serif;
     font-weight:700;font-size:30px;letter-spacing:.01em;
@@ -70,22 +74,47 @@
 
   main{flex:1;padding:16px 16px 100px 16px;}
 
-  /* ---- Search ---- */
-  .search-wrap{position:relative;margin-bottom:16px;}
+  /* ---- Config banner ---- */
+  .config-banner{
+    margin:0 0 14px 0;padding:12px 14px;border:1px solid var(--warn);
+    background:rgba(217,164,65,.08);border-radius:10px;font-size:12.5px;color:var(--warn);
+    line-height:1.5;
+  }
+  .config-banner b{color:var(--ink);}
+
+  /* ---- Search + toolbar ---- */
+  .search-wrap{position:relative;margin-bottom:10px;}
   .search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.5;}
-  input[type="text"], input[type="number"]{
+  input[type="text"], input[type="number"], select{
     width:100%;background:var(--panel);border:1px solid var(--line);
     color:var(--ink);border-radius:8px;padding:12px 12px 12px 38px;
     font-family:'Inter',sans-serif;font-size:15px;outline:none;
   }
-  input[type="text"]:focus, input[type="number"]:focus{border-color:var(--copper);}
+  select{padding-left:12px;-webkit-appearance:none;appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238A9096' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;
+  }
+  input[type="text"]:focus, input[type="number"]:focus, select:focus{border-color:var(--copper);}
   .search-wrap input{padding-left:38px;}
+
+  .toolbar{display:flex;gap:8px;margin-bottom:10px;}
+  .toolbar select{flex:1;font-size:13px;padding-top:10px;padding-bottom:10px;}
+  .icon-btn{
+    background:var(--panel);border:1px solid var(--line);border-radius:8px;
+    width:40px;height:40px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+    color:var(--ink);cursor:pointer;
+  }
+  .icon-btn:active{transform:scale(.95);}
+  .data-row{display:flex;gap:8px;margin-bottom:16px;}
+  .data-row .btn-secondary{flex:1;padding:10px;font-size:12.5px;display:flex;align-items:center;justify-content:center;gap:6px;}
+  .whoami{font-size:12px;color:var(--muted);margin:-4px 0 14px 2px;}
+  .whoami button{background:none;border:none;color:var(--steel);font-size:12px;padding:0;cursor:pointer;text-decoration:underline;}
 
   /* ---- Part grid ---- */
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .card{
     background:var(--panel);border:1px solid var(--line);border-radius:10px;
-    overflow:hidden;cursor:pointer;transition:border-color .15s, transform .1s;
+    overflow:hidden;cursor:pointer;transition:border-color .15s, transform .1s;position:relative;
   }
   .card:active{transform:scale(.98);}
   .card:hover{border-color:var(--copper-dim);}
@@ -100,7 +129,13 @@
     font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;
     color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
-  .card-meta{font-size:11px;color:var(--muted);margin-top:3px;}
+  .card-meta{font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .card-status{
+    position:absolute;top:8px;right:8px;width:10px;height:10px;border-radius:50%;
+    border:2px solid var(--bg);
+  }
+  .card-status.ok{background:var(--ok);}
+  .card-status.bad{background:var(--danger);}
 
   .empty{
     text-align:center;padding:60px 20px;color:var(--muted);
@@ -147,32 +182,54 @@
   }
   .topbar-title{
     font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:20px;
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;
   }
 
-  .detail-img{
-    width:100%;aspect-ratio:4/3;background:var(--panel);
-    display:flex;align-items:center;justify-content:center;overflow:hidden;
-    border-bottom:1px solid var(--line);
+  .gallery{display:flex;gap:0;overflow-x:auto;border-bottom:1px solid var(--line);scroll-snap-type:x mandatory;}
+  .gallery-slide{
+    flex:0 0 100%;aspect-ratio:4/3;background:var(--panel);
+    display:flex;align-items:center;justify-content:center;overflow:hidden;scroll-snap-align:start;
   }
-  .detail-img img{width:100%;height:100%;object-fit:contain;}
-  .detail-img svg{opacity:.25;}
+  .gallery-slide img{width:100%;height:100%;object-fit:contain;}
+  .gallery-slide svg{opacity:.25;}
+  .gallery-dots{display:flex;gap:4px;justify-content:center;padding:8px 0;}
+  .gallery-dots span{width:5px;height:5px;border-radius:50%;background:var(--line);}
+
+  .info-strip{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px 0 16px;}
+  .info-pill{
+    background:var(--panel);border:1px solid var(--line);border-radius:20px;
+    padding:5px 12px;font-size:12px;color:var(--muted);
+  }
+  .info-pill b{color:var(--ink);font-weight:600;}
 
   .section-label{
-    display:flex;align-items:center;gap:8px;
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
     font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:18px;
     padding:18px 16px 8px 16px;
   }
+  .section-label-l{display:flex;align-items:center;gap:8px;}
   .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
   .dot-piling{background:var(--copper);}
   .dot-grinding{background:var(--steel);}
 
   .spec-table{margin:0 16px 8px 16px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
-  .spec-row{display:flex;justify-content:space-between;padding:11px 14px;font-size:14px;}
+  .spec-row{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;font-size:14px;gap:10px;}
   .spec-row + .spec-row{border-top:1px solid var(--line);}
-  .spec-key{color:var(--muted);}
-  .spec-val{font-family:'IBM Plex Mono',monospace;font-weight:600;}
+  .spec-key{color:var(--muted);flex-shrink:0;}
+  .spec-val{font-family:'IBM Plex Mono',monospace;font-weight:600;text-align:right;}
+  .spec-tol{color:var(--muted);font-weight:500;font-size:12px;display:block;}
   .spec-note{margin:8px 16px 0 16px;color:var(--muted);font-size:12.5px;font-style:italic;}
+  .spec-empty{margin:0 16px 8px 16px;color:var(--muted);font-size:13px;padding:4px 2px;}
+
+  .chip{
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;
+    padding:2px 7px;border-radius:5px;letter-spacing:.03em;flex-shrink:0;
+  }
+  .chip-ok{background:rgba(111,174,124,.15);color:var(--ok);}
+  .chip-bad{background:rgba(194,91,79,.15);color:var(--danger);}
+
+  .history-list{margin:0 16px 8px 16px;}
+  .history-item{font-size:12px;color:var(--muted);padding:4px 0;}
 
   .part-header{padding:16px;}
   .part-title{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;}
@@ -194,18 +251,41 @@
     padding:20px;text-align:center;cursor:pointer;color:var(--muted);font-size:13px;
     background:var(--panel);position:relative;overflow:hidden;
   }
-  .upload-box.has-img{padding:0;border-style:solid;}
-  .upload-box img{width:100%;display:block;max-height:220px;object-fit:contain;background:#0000;}
   .upload-box input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+  .form-gallery{display:flex;gap:8px;flex-wrap:wrap;padding:0 16px;margin-top:10px;}
+  .form-gallery-thumb{
+    width:72px;height:72px;border-radius:8px;overflow:hidden;position:relative;
+    border:1px solid var(--line);background:var(--panel-2);
+  }
+  .form-gallery-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .form-gallery-thumb button{
+    position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;
+    background:rgba(20,23,26,.85);border:none;color:var(--ink);font-size:11px;line-height:1;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+  }
 
   .form-section{margin-top:8px;}
   .form-actions{padding:20px 16px 0 16px;display:flex;flex-direction:column;gap:10px;}
+
+  .dim-card{margin:0 16px 10px 16px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;}
+  .dim-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .dim-remove{background:none;border:none;color:var(--muted);font-size:18px;line-height:1;cursor:pointer;padding:2px 6px;}
+  .dim-remove:hover{color:var(--danger);}
+  .dim-name-input{margin-bottom:8px;}
+  .dim-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .dim-grid label{display:block;font-size:10.5px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em;}
+  .dim-grid input{padding:9px 10px;font-size:13px;border-radius:7px;}
+  .add-dim-btn{
+    margin:0 16px 4px 16px;width:calc(100% - 32px);background:transparent;border:1.5px dashed var(--line);
+    color:var(--muted);border-radius:10px;padding:11px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  .add-dim-btn:active{border-color:var(--copper-dim);color:var(--ink);}
 
   .toast{
     position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
     background:var(--panel-2);border:1px solid var(--ok);color:var(--ink);
     padding:10px 18px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;
-    transition:opacity .25s, transform .25s;z-index:50;
+    transition:opacity .25s, transform .25s;z-index:50;max-width:90%;text-align:center;
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
 
@@ -218,16 +298,32 @@
   <!-- ============ HOME ============ -->
   <div class="screen active" id="screen-home">
     <header>
-      <p class="eyebrow">AVO · Dimensional Reference</p>
+      <p class="eyebrow"><span>AVO · Dimensional Reference</span><span id="conn-indicator"><span class="conn-dot" id="conn-dot"></span></span></p>
       <h1>Brush Spec</h1>
       <p class="sub">Piling &amp; grinding measurements, by part number.</p>
     </header>
     <div class="ruler"></div>
     <main>
+      <div id="config-banner-slot"></div>
       <div class="search-wrap">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-        <input type="text" id="search" placeholder="Search part number…" autocomplete="off">
+        <input type="text" id="search" placeholder="Search part number or customer…" autocomplete="off">
       </div>
+      <div class="toolbar">
+        <select id="filter-customer"><option value="">All customers</option></select>
+        <select id="sort-by">
+          <option value="part">Part number (A–Z)</option>
+          <option value="updated">Recently updated</option>
+          <option value="customer">Customer</option>
+        </select>
+      </div>
+      <div class="data-row">
+        <button class="btn-secondary" onclick="exportJSON()">⇩ Export JSON</button>
+        <button class="btn-secondary" onclick="exportCSV()">⇩ Export CSV</button>
+        <button class="btn-secondary" onclick="document.getElementById('import-input').click()">⇧ Import</button>
+        <input type="file" id="import-input" accept="application/json" style="display:none;">
+      </div>
+      <div class="whoami">Logging edits as <b id="whoami-name">—</b> · <button onclick="promptUserName()">change</button></div>
       <div id="grid" class="grid"></div>
       <div id="empty" class="empty" style="display:none;">
         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
@@ -251,22 +347,27 @@
       </button>
       <div class="topbar-title" id="detail-title">Part</div>
     </div>
-    <div class="detail-img" id="detail-img"></div>
+    <div class="gallery" id="detail-gallery"></div>
     <div class="part-header">
       <div class="part-title" id="detail-part"></div>
       <div class="part-updated" id="detail-updated"></div>
     </div>
+    <div class="info-strip" id="detail-info"></div>
 
-    <div class="section-label"><span class="dot dot-piling"></span>Piling</div>
+    <div class="section-label"><span class="section-label-l"><span class="dot dot-piling"></span>Piling</span></div>
     <div class="spec-table" id="detail-piling"></div>
     <div class="spec-note" id="detail-piling-note"></div>
 
-    <div class="section-label"><span class="dot dot-grinding"></span>Grinding</div>
+    <div class="section-label"><span class="section-label-l"><span class="dot dot-grinding"></span>Grinding</span></div>
     <div class="spec-table" id="detail-grinding"></div>
     <div class="spec-note" id="detail-grinding-note"></div>
 
-    <div class="form-actions">
+    <div class="section-label"><span class="section-label-l">History</span></div>
+    <div class="history-list" id="detail-history"></div>
+
+    <div class="form-actions" style="padding-bottom:40px;">
       <button class="btn-secondary" onclick="editCurrent()">Edit spec</button>
+      <button class="btn-secondary" onclick="duplicateCurrent()">Duplicate as new part</button>
       <button class="btn-danger" onclick="deleteCurrent()">Delete part</button>
     </div>
   </div>
@@ -284,42 +385,33 @@
       <label>Part number</label>
       <input type="text" id="f-part" placeholder="e.g. OFBC-028">
     </div>
+    <div class="field-row">
+      <div class="field"><label>Customer</label><input type="text" id="f-customer" placeholder="e.g. Bosch Power Tools"></div>
+      <div class="field"><label>Drawing No.</label><input type="text" id="f-drawing" placeholder="e.g. DWG-1042"></div>
+    </div>
+    <div class="field"><label>Revision</label><input type="text" id="f-revision" placeholder="e.g. Rev C"></div>
 
     <div class="field" style="margin-top:6px;">
-      <label>Component image</label>
+      <label>Component images (up to 4)</label>
     </div>
     <div class="upload-box" id="upload-box" onclick="document.getElementById('f-image').click()">
-      <div id="upload-placeholder">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-        <div style="margin-top:6px;">Tap to upload image</div>
-      </div>
-      <img id="upload-preview" style="display:none;">
-      <input type="file" id="f-image" accept="image/*">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      <div style="margin-top:6px;">Tap to upload image(s)</div>
+      <input type="file" id="f-image" accept="image/*" multiple>
     </div>
+    <div class="form-gallery" id="form-gallery"></div>
 
     <div class="form-section">
-      <div class="section-label"><span class="dot dot-piling"></span>Piling data</div>
-      <div class="field-row">
-        <div class="field"><label>Thickness (mm)</label><input type="number" step="any" id="p-thickness"></div>
-        <div class="field"><label>Height (mm)</label><input type="number" step="any" id="p-height"></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>Width (mm)</label><input type="number" step="any" id="p-width"></div>
-        <div class="field"><label>Length (mm)</label><input type="number" step="any" id="p-length"></div>
-      </div>
+      <div class="section-label"><span class="section-label-l"><span class="dot dot-piling"></span>Piling data</span></div>
+      <div id="piling-dims"></div>
+      <button type="button" class="add-dim-btn" onclick="addDimRow('piling-dims')">+ Add dimension</button>
       <div class="field"><label>Notes / etc.</label><textarea id="p-notes" placeholder="Any additional piling notes…"></textarea></div>
     </div>
 
     <div class="form-section">
-      <div class="section-label"><span class="dot dot-grinding"></span>Grinding data</div>
-      <div class="field-row">
-        <div class="field"><label>Thickness (mm)</label><input type="number" step="any" id="g-thickness"></div>
-        <div class="field"><label>Height (mm)</label><input type="number" step="any" id="g-height"></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>Width (mm)</label><input type="number" step="any" id="g-width"></div>
-        <div class="field"><label>Length (mm)</label><input type="number" step="any" id="g-length"></div>
-      </div>
+      <div class="section-label"><span class="section-label-l"><span class="dot dot-grinding"></span>Grinding data</span></div>
+      <div id="grinding-dims"></div>
+      <button type="button" class="add-dim-btn" onclick="addDimRow('grinding-dims')">+ Add dimension</button>
       <div class="field"><label>Notes / etc.</label><textarea id="g-notes" placeholder="Any additional grinding notes…"></textarea></div>
     </div>
 
@@ -335,280 +427,609 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<!-- Firebase (compat build so we can keep plain global functions / inline onclick) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
 <script>
-let parts = {};          // partNumber -> record
-let currentPart = null;  // part number being viewed
-let editingOriginal = null; // part number being edited (for rename handling)
-let pendingImageData = null;
+/* =========================================================================
+   FIREBASE CONFIG — replace with your own project's config object.
+   Firebase Console → Project settings → General → Your apps → SDK setup.
+   ========================================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyDPwzaaWHNv0iD1BEROhmPUtpxv8sVkceo",
+  authDomain: "ram-app-142ca.firebaseapp.com",
+  projectId: "ram-app-142ca",
+  storageBucket: "ram-app-142ca.firebasestorage.app",
+  messagingSenderId: "456884714428",
+  appId: "1:456884714428:web:3ec43b1c03482ebe1909b9"
+};
+const CONFIG_OK = firebaseConfig.apiKey && firebaseConfig.apiKey.indexOf('YOUR_') !== 0;
 
-const INDEX_KEY = 'parts-index';
+let db = null;
+let parts = {};            // docId -> record
+let currentPart = null;    // docId currently viewed
+let editingId = null;      // docId being edited (null = new insert)
+let pendingImages = [];    // array of dataURLs for the form
+let dimCounter = 0;
+let unsubscribeSnapshot = null;
 
-// Fallback shim: if window.storage isn't available (or errors out) in this
-// environment, fall back to an in-memory store so the app still works for
-// the current session, instead of silently failing on save.
-if(typeof window.storage === 'undefined'){
-  console.warn('window.storage not found — using in-memory fallback (data will not persist between sessions).');
-  window._memStore = {};
-  window.storage = {
-    async get(key){
-      if(!(key in window._memStore)) throw new Error('not found');
-      return { key, value: window._memStore[key] };
-    },
-    async set(key, value){
-      window._memStore[key] = value;
-      return { key, value };
-    },
-    async delete(key){
-      delete window._memStore[key];
-      return { key, deleted: true };
-    },
-    async list(prefix){
-      return { keys: Object.keys(window._memStore).filter(k => !prefix || k.startsWith(prefix)) };
-    }
-  };
-  window._usingFallbackStorage = true;
+const WHOAMI_KEY = 'brushspec_username';
+
+function sanitizeId(p){
+  return String(p).trim().replace(/[^a-zA-Z0-9_\-\.]/g, '_');
 }
 
-function keyFor(p){ return 'part:' + p; }
+function getUserName(){
+  return localStorage.getItem(WHOAMI_KEY) || '';
+}
+function promptUserName(){
+  const cur = getUserName();
+  const name = prompt('Your name (shown in edit history):', cur || '');
+  if(name !== null && name.trim()){
+    localStorage.setItem(WHOAMI_KEY, name.trim());
+    document.getElementById('whoami-name').textContent = name.trim();
+  }
+}
+function ensureUserName(){
+  let name = getUserName();
+  if(!name){
+    name = prompt('Your name (shown in edit history):', '') || '';
+    if(name.trim()){ localStorage.setItem(WHOAMI_KEY, name.trim()); }
+  }
+  document.getElementById('whoami-name').textContent = getUserName() || 'Unknown';
+  return getUserName() || 'Unknown';
+}
 
-async function loadAll(){
+/* ---------------- Firebase init ---------------- */
+if(CONFIG_OK){
   try{
-    const idx = await window.storage.get(INDEX_KEY);
-    const list = idx ? JSON.parse(idx.value) : [];
-    for(const p of list){
-      try{
-        const rec = await window.storage.get(keyFor(p));
-        if(rec) parts[p] = JSON.parse(rec.value);
-      }catch(e){ /* missing record, skip */ }
-    }
-  }catch(e){ /* no index yet */ }
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+  }catch(e){
+    console.error('Firebase init failed', e);
+    db = null;
+  }
+}
+
+function setConnDot(state){
+  // state: 'live' | 'off' | 'wait'
+  const dot = document.getElementById('conn-dot');
+  dot.classList.remove('live','off');
+  if(state === 'live') dot.classList.add('live');
+  if(state === 'off') dot.classList.add('off');
+}
+
+function showConfigBanner(){
+  const slot = document.getElementById('config-banner-slot');
+  slot.innerHTML = `<div class="config-banner"><b>Firebase not configured.</b> This preview is running on local memory only — data will not sync between devices or persist after you close the tab. Add your Firebase project config near the top of the &lt;script&gt; tag to enable real storage.</div>`;
+}
+
+/* ---------------- Local fallback (used only if Firebase isn't configured) ---------------- */
+let memStore = {};
+function localLoadAll(){
+  parts = JSON.parse(JSON.stringify(memStore));
   renderGrid();
+  populateCustomerFilter();
+}
+async function localSave(id, rec){ memStore[id] = rec; localLoadAll(); }
+async function localDelete(id){ delete memStore[id]; localLoadAll(); }
+
+/* ---------------- Data layer (Firestore or local fallback) ---------------- */
+function startListening(){
+  if(!CONFIG_OK || !db){
+    showConfigBanner();
+    setConnDot('off');
+    localLoadAll();
+    return;
+  }
+  setConnDot('wait');
+  unsubscribeSnapshot = db.collection('parts').onSnapshot(
+    snapshot => {
+      parts = {};
+      snapshot.forEach(doc => { parts[doc.id] = doc.data(); });
+      setConnDot('live');
+      renderGrid();
+      populateCustomerFilter();
+      if(document.getElementById('screen-detail').classList.contains('active') && currentPart){
+        if(parts[currentPart]) openDetail(currentPart);
+        else goHome();
+      }
+    },
+    err => {
+      console.error('Firestore listen failed', err);
+      setConnDot('off');
+      showToast('Sync error: ' + (err && err.message ? err.message : 'check Firestore rules'));
+    }
+  );
 }
 
-async function saveIndex(){
-  await window.storage.set(INDEX_KEY, JSON.stringify(Object.keys(parts)));
+async function persistRecord(id, rec){
+  if(CONFIG_OK && db){
+    await db.collection('parts').doc(id).set(rec);
+  } else {
+    await localSave(id, rec);
+  }
+}
+async function removeRecord(id){
+  if(CONFIG_OK && db){
+    await db.collection('parts').doc(id).delete();
+  } else {
+    await localDelete(id);
+  }
 }
 
+/* ---------------- UI helpers ---------------- */
 function showToast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 1800);
+  setTimeout(()=>t.classList.remove('show'), 2200);
 }
-
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
 }
-
 function goHome(){ showScreen('screen-home'); renderGrid(); }
-
 function placeholderSVG(){
   return '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
+}
+function escapeHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------------- Grid / filter / sort ---------------- */
+function populateCustomerFilter(){
+  const sel = document.getElementById('filter-customer');
+  const prev = sel.value;
+  const customers = Array.from(new Set(Object.values(parts).map(r => (r.customer||'').trim()).filter(Boolean))).sort();
+  sel.innerHTML = '<option value="">All customers</option>' + customers.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  if(customers.includes(prev)) sel.value = prev;
+}
+
+function partHasFailure(rec){
+  const dims = [...(rec.piling?.dims||[]), ...(rec.grinding?.dims||[])];
+  return dims.some(d => dimStatus(d) === 'bad');
+}
+function partHasPass(rec){
+  const dims = [...(rec.piling?.dims||[]), ...(rec.grinding?.dims||[])];
+  return dims.some(d => dimStatus(d) === 'ok');
 }
 
 function renderGrid(){
   const grid = document.getElementById('grid');
   const empty = document.getElementById('empty');
   const q = (document.getElementById('search').value || '').trim().toLowerCase();
-  const keys = Object.keys(parts).sort();
-  const filtered = keys.filter(k => k.toLowerCase().includes(q));
+  const customerFilter = document.getElementById('filter-customer').value;
+  const sortBy = document.getElementById('sort-by').value;
+
+  let ids = Object.keys(parts);
+  ids = ids.filter(id => {
+    const rec = parts[id];
+    const matchesQ = !q || (rec.partNumber||'').toLowerCase().includes(q) || (rec.customer||'').toLowerCase().includes(q);
+    const matchesC = !customerFilter || (rec.customer||'') === customerFilter;
+    return matchesQ && matchesC;
+  });
+
+  if(sortBy === 'updated'){
+    ids.sort((a,b) => (parts[b].updated||0) - (parts[a].updated||0));
+  } else if(sortBy === 'customer'){
+    ids.sort((a,b) => (parts[a].customer||'').localeCompare(parts[b].customer||'') || (parts[a].partNumber||'').localeCompare(parts[b].partNumber||''));
+  } else {
+    ids.sort((a,b) => (parts[a].partNumber||'').localeCompare(parts[b].partNumber||''));
+  }
+
   grid.innerHTML = '';
-  if(filtered.length === 0){
+  if(ids.length === 0){
     empty.style.display = 'block';
     grid.style.display = 'none';
     return;
   }
   empty.style.display = 'none';
   grid.style.display = 'grid';
-  for(const p of filtered){
-    const rec = parts[p];
+  for(const id of ids){
+    const rec = parts[id];
+    const img = (rec.images && rec.images[0]) ? rec.images[0] : null;
+    const statusClass = partHasFailure(rec) ? 'bad' : (partHasPass(rec) ? 'ok' : '');
     const card = document.createElement('div');
     card.className = 'card';
-    card.onclick = () => openDetail(p);
+    card.onclick = () => openDetail(id);
     card.innerHTML = `
-      <div class="card-img">${rec.image ? `<img src="${rec.image}">` : placeholderSVG()}</div>
+      ${statusClass ? `<div class="card-status ${statusClass}"></div>` : ''}
+      <div class="card-img">${img ? `<img src="${img}">` : placeholderSVG()}</div>
       <div class="card-body">
-        <div class="card-part">${escapeHtml(p)}</div>
-        <div class="card-meta">${rec.updated ? new Date(rec.updated).toLocaleDateString() : ''}</div>
+        <div class="card-part">${escapeHtml(rec.partNumber)}</div>
+        <div class="card-meta">${escapeHtml(rec.customer || (rec.updated ? new Date(rec.updated).toLocaleDateString() : ''))}</div>
       </div>`;
     grid.appendChild(card);
   }
 }
-
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
 document.getElementById('search').addEventListener('input', renderGrid);
+document.getElementById('filter-customer').addEventListener('change', renderGrid);
+document.getElementById('sort-by').addEventListener('change', renderGrid);
 
-function specRow(k, v){
-  return `<div class="spec-row"><span class="spec-key">${k}</span><span class="spec-val">${(v===''||v===undefined||v===null) ? '—' : v + ' mm'}</span></div>`;
+/* ---------------- Tolerance / dimension logic ---------------- */
+function dimStatus(dim){
+  if(dim.measured === '' || dim.measured == null) return null;
+  const nominal = parseFloat(dim.nominal), meas = parseFloat(dim.measured);
+  if(isNaN(nominal) || isNaN(meas)) return null;
+  const upper = Math.abs(parseFloat(dim.upper) || 0);
+  const lower = Math.abs(parseFloat(dim.lower) || 0);
+  const max = nominal + upper, min = nominal - lower;
+  return (meas >= min && meas <= max) ? 'ok' : 'bad';
 }
 
-function openDetail(p){
-  currentPart = p;
-  const rec = parts[p];
-  document.getElementById('detail-title').textContent = p;
-  document.getElementById('detail-part').textContent = p;
-  document.getElementById('detail-updated').textContent = rec.updated ? 'Updated ' + new Date(rec.updated).toLocaleString() : '';
-  document.getElementById('detail-img').innerHTML = rec.image ? `<img src="${rec.image}">` : placeholderSVG();
+function fmtNum(v){ return (v === '' || v === undefined || v === null) ? null : v; }
 
-  const pil = rec.piling || {};
-  const gri = rec.grinding || {};
-  document.getElementById('detail-piling').innerHTML =
-    specRow('Thickness', pil.thickness) + specRow('Height', pil.height) + specRow('Width', pil.width) + specRow('Length', pil.length);
-  document.getElementById('detail-piling-note').textContent = pil.notes || '';
-  document.getElementById('detail-grinding').innerHTML =
-    specRow('Thickness', gri.thickness) + specRow('Height', gri.height) + specRow('Width', gri.width) + specRow('Length', gri.length);
-  document.getElementById('detail-grinding-note').textContent = gri.notes || '';
+function specDimRow(dim){
+  const name = escapeHtml(dim.name || 'Dimension');
+  const unit = dim.unit || 'mm';
+  const nominal = fmtNum(dim.nominal);
+  const upper = fmtNum(dim.upper);
+  const lower = fmtNum(dim.lower);
+  const measured = fmtNum(dim.measured);
+  let valHtml = nominal == null ? '—' : `${nominal} ${escapeHtml(unit)}`;
+  let tolHtml = '';
+  if(nominal != null && (upper != null || lower != null)){
+    tolHtml = `<span class="spec-tol">+${upper ?? '0'} / −${lower ?? '0'}</span>`;
+  }
+  let chipHtml = '';
+  if(measured != null){
+    const status = dimStatus(dim);
+    valHtml = `${valHtml}<span class="spec-tol">measured ${measured}</span>`;
+    if(status) chipHtml = `<span class="chip ${status === 'ok' ? 'chip-ok' : 'chip-bad'}">${status === 'ok' ? 'PASS' : 'FAIL'}</span>`;
+  }
+  return `<div class="spec-row"><span class="spec-key">${name}</span><span style="display:flex;align-items:center;gap:8px;"><span class="spec-val">${valHtml}${tolHtml}</span>${chipHtml}</span></div>`;
+}
+
+function renderSpecSection(containerId, section){
+  const el = document.getElementById(containerId);
+  const dims = (section && section.dims) || [];
+  if(dims.length === 0){
+    el.className = 'spec-empty';
+    el.innerHTML = 'No dimensions recorded.';
+    return;
+  }
+  el.className = 'spec-table';
+  el.innerHTML = dims.map(specDimRow).join('');
+}
+
+/* ---------------- Detail screen ---------------- */
+function openDetail(id){
+  currentPart = id;
+  const rec = parts[id];
+  if(!rec){ goHome(); return; }
+
+  document.getElementById('detail-title').textContent = rec.partNumber;
+  document.getElementById('detail-part').textContent = rec.partNumber;
+  document.getElementById('detail-updated').textContent = rec.updated ? 'Updated ' + new Date(rec.updated).toLocaleString() : '';
+
+  const gallery = document.getElementById('detail-gallery');
+  const images = rec.images || [];
+  gallery.innerHTML = images.length
+    ? images.map(src => `<div class="gallery-slide"><img src="${src}"></div>`).join('')
+    : `<div class="gallery-slide">${placeholderSVG()}</div>`;
+
+  const info = document.getElementById('detail-info');
+  const pills = [];
+  if(rec.customer) pills.push(`<span class="info-pill">Customer <b>${escapeHtml(rec.customer)}</b></span>`);
+  if(rec.drawingNo) pills.push(`<span class="info-pill">Drawing <b>${escapeHtml(rec.drawingNo)}</b></span>`);
+  if(rec.revision) pills.push(`<span class="info-pill">Rev <b>${escapeHtml(rec.revision)}</b></span>`);
+  info.innerHTML = pills.join('');
+
+  renderSpecSection('detail-piling', rec.piling);
+  document.getElementById('detail-piling-note').textContent = (rec.piling && rec.piling.notes) || '';
+
+  renderSpecSection('detail-grinding', rec.grinding);
+  document.getElementById('detail-grinding-note').textContent = (rec.grinding && rec.grinding.notes) || '';
+
+  const hist = (rec.history || []).slice(0, 6);
+  document.getElementById('detail-history').innerHTML = hist.length
+    ? hist.map(h => `<div class="history-item">${new Date(h.at).toLocaleString()} — ${escapeHtml(h.by || 'Unknown')}</div>`).join('')
+    : '<div class="history-item">No history yet.</div>';
 
   showScreen('screen-detail');
 }
 
+/* ---------------- Dimension rows (form) ---------------- */
+function addDimRow(containerId, dim){
+  dim = dim || { name:'', unit:'mm', nominal:'', upper:'', lower:'', measured:'' };
+  const rowId = 'dim' + (++dimCounter);
+  const container = document.getElementById(containerId);
+  const card = document.createElement('div');
+  card.className = 'dim-card';
+  card.id = rowId;
+  card.innerHTML = `
+    <div class="dim-card-head">
+      <input type="text" class="dim-name-input dim-name" placeholder="e.g. Thickness, Chamfer, Slot width" value="${escapeHtml(dim.name)}" style="flex:1;">
+      <button type="button" class="dim-remove" onclick="document.getElementById('${rowId}').remove()">✕</button>
+    </div>
+    <div class="dim-grid">
+      <div><label>Nominal</label><input type="number" step="any" class="dim-nominal" value="${escapeHtml(dim.nominal)}"></div>
+      <div><label>Unit</label><input type="text" class="dim-unit" value="${escapeHtml(dim.unit || 'mm')}"></div>
+      <div><label>Upper (+tol)</label><input type="number" step="any" class="dim-upper" value="${escapeHtml(dim.upper)}"></div>
+      <div><label>Lower (−tol)</label><input type="number" step="any" class="dim-lower" value="${escapeHtml(dim.lower)}"></div>
+      <div style="grid-column:1/3;"><label>Measured (optional)</label><input type="number" step="any" class="dim-measured" value="${escapeHtml(dim.measured)}"></div>
+    </div>`;
+  container.appendChild(card);
+}
+
+function getDimsFromContainer(containerId){
+  const rows = document.getElementById(containerId).querySelectorAll('.dim-card');
+  const out = [];
+  rows.forEach(row => {
+    const name = row.querySelector('.dim-name').value.trim();
+    const nominal = row.querySelector('.dim-nominal').value;
+    const unit = row.querySelector('.dim-unit').value.trim() || 'mm';
+    const upper = row.querySelector('.dim-upper').value;
+    const lower = row.querySelector('.dim-lower').value;
+    const measured = row.querySelector('.dim-measured').value;
+    if(!name && !nominal) return; // skip fully empty rows
+    out.push({ name: name || 'Dimension', unit, nominal, upper, lower, measured });
+  });
+  return out;
+}
+
+function defaultDims(){
+  return [
+    { name:'Thickness', unit:'mm', nominal:'', upper:'', lower:'', measured:'' },
+    { name:'Height',    unit:'mm', nominal:'', upper:'', lower:'', measured:'' },
+    { name:'Width',     unit:'mm', nominal:'', upper:'', lower:'', measured:'' },
+    { name:'Length',    unit:'mm', nominal:'', upper:'', lower:'', measured:'' }
+  ];
+}
+
+/* ---------------- Image upload (multi) ---------------- */
+function renderFormGallery(){
+  const el = document.getElementById('form-gallery');
+  el.innerHTML = pendingImages.map((src, i) => `
+    <div class="form-gallery-thumb">
+      <img src="${src}">
+      <button type="button" onclick="removeFormImage(${i})">✕</button>
+    </div>`).join('');
+}
+function removeFormImage(i){
+  pendingImages.splice(i, 1);
+  renderFormGallery();
+}
+function compressImage(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        const maxDim = 800;
+        let w = img.width, h = img.height;
+        if(w > h && w > maxDim){ h = h * (maxDim/w); w = maxDim; }
+        else if(h >= w && h > maxDim){ w = w * (maxDim/h); h = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.65));
+      };
+      img.onerror = reject;
+      img.src = ev.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+document.getElementById('f-image').addEventListener('change', async function(e){
+  const files = Array.from(e.target.files || []);
+  for(const file of files){
+    if(pendingImages.length >= 4){ showToast('Max 4 images per part'); break; }
+    try{
+      const dataUrl = await compressImage(file);
+      pendingImages.push(dataUrl);
+    }catch(err){ console.error(err); }
+  }
+  renderFormGallery();
+  e.target.value = '';
+});
+
+/* ---------------- Form open/save ---------------- */
+function resetDimContainers(){
+  document.getElementById('piling-dims').innerHTML = '';
+  document.getElementById('grinding-dims').innerHTML = '';
+}
+
 function openForm(){
-  editingOriginal = null;
-  pendingImageData = null;
+  editingId = null;
+  pendingImages = [];
   document.getElementById('form-title').textContent = 'Insert Data';
   document.getElementById('f-part').value = '';
-  document.getElementById('f-part').disabled = false;
-  ['p-thickness','p-height','p-width','p-length','p-notes','g-thickness','g-height','g-width','g-length','g-notes'].forEach(id=>{
-    document.getElementById(id).value = '';
-  });
-  document.getElementById('upload-preview').style.display = 'none';
-  document.getElementById('upload-placeholder').style.display = 'block';
-  document.getElementById('upload-box').classList.remove('has-img');
+  document.getElementById('f-customer').value = '';
+  document.getElementById('f-drawing').value = '';
+  document.getElementById('f-revision').value = '';
+  document.getElementById('p-notes').value = '';
+  document.getElementById('g-notes').value = '';
+  resetDimContainers();
+  defaultDims().forEach(d => addDimRow('piling-dims', d));
+  defaultDims().forEach(d => addDimRow('grinding-dims', d));
+  renderFormGallery();
   document.getElementById('f-image').value = '';
   showScreen('screen-form');
 }
 
 function editCurrent(){
-  const p = currentPart;
-  const rec = parts[p];
-  editingOriginal = p;
-  pendingImageData = rec.image || null;
+  const id = currentPart;
+  const rec = parts[id];
+  if(!rec) return;
+  editingId = id;
+  pendingImages = (rec.images || []).slice();
   document.getElementById('form-title').textContent = 'Edit Spec';
-  document.getElementById('f-part').value = p;
-  document.getElementById('f-part').disabled = false;
-  const pil = rec.piling || {}, gri = rec.grinding || {};
-  document.getElementById('p-thickness').value = pil.thickness ?? '';
-  document.getElementById('p-height').value = pil.height ?? '';
-  document.getElementById('p-width').value = pil.width ?? '';
-  document.getElementById('p-length').value = pil.length ?? '';
-  document.getElementById('p-notes').value = pil.notes ?? '';
-  document.getElementById('g-thickness').value = gri.thickness ?? '';
-  document.getElementById('g-height').value = gri.height ?? '';
-  document.getElementById('g-width').value = gri.width ?? '';
-  document.getElementById('g-length').value = gri.length ?? '';
-  document.getElementById('g-notes').value = gri.notes ?? '';
-  if(rec.image){
-    document.getElementById('upload-preview').src = rec.image;
-    document.getElementById('upload-preview').style.display = 'block';
-    document.getElementById('upload-placeholder').style.display = 'none';
-    document.getElementById('upload-box').classList.add('has-img');
-  } else {
-    document.getElementById('upload-preview').style.display = 'none';
-    document.getElementById('upload-placeholder').style.display = 'block';
-    document.getElementById('upload-box').classList.remove('has-img');
-  }
+  document.getElementById('f-part').value = rec.partNumber || '';
+  document.getElementById('f-customer').value = rec.customer || '';
+  document.getElementById('f-drawing').value = rec.drawingNo || '';
+  document.getElementById('f-revision').value = rec.revision || '';
+  document.getElementById('p-notes').value = (rec.piling && rec.piling.notes) || '';
+  document.getElementById('g-notes').value = (rec.grinding && rec.grinding.notes) || '';
+  resetDimContainers();
+  const pilDims = (rec.piling && rec.piling.dims && rec.piling.dims.length) ? rec.piling.dims : defaultDims();
+  const griDims = (rec.grinding && rec.grinding.dims && rec.grinding.dims.length) ? rec.grinding.dims : defaultDims();
+  pilDims.forEach(d => addDimRow('piling-dims', d));
+  griDims.forEach(d => addDimRow('grinding-dims', d));
+  renderFormGallery();
   document.getElementById('f-image').value = '';
   showScreen('screen-form');
 }
 
+function duplicateCurrent(){
+  const id = currentPart;
+  const rec = parts[id];
+  if(!rec) return;
+  editingId = null; // treated as a new insert
+  pendingImages = (rec.images || []).slice();
+  document.getElementById('form-title').textContent = 'Duplicate Spec';
+  document.getElementById('f-part').value = ''; // must enter a new part number
+  document.getElementById('f-customer').value = rec.customer || '';
+  document.getElementById('f-drawing').value = rec.drawingNo || '';
+  document.getElementById('f-revision').value = rec.revision || '';
+  document.getElementById('p-notes').value = (rec.piling && rec.piling.notes) || '';
+  document.getElementById('g-notes').value = (rec.grinding && rec.grinding.notes) || '';
+  resetDimContainers();
+  (rec.piling?.dims || defaultDims()).forEach(d => addDimRow('piling-dims', d));
+  (rec.grinding?.dims || defaultDims()).forEach(d => addDimRow('grinding-dims', d));
+  renderFormGallery();
+  document.getElementById('f-image').value = '';
+  showScreen('screen-form');
+  showToast('Enter a new part number to save this as a copy');
+}
+
 function cancelForm(){
-  if(editingOriginal){ openDetail(editingOriginal); }
+  if(editingId){ openDetail(editingId); }
   else { goHome(); }
 }
 
-document.getElementById('f-image').addEventListener('change', function(e){
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = function(ev){
-    const img = new Image();
-    img.onload = function(){
-      // resize/compress to keep under storage limits
-      const maxDim = 900;
-      let w = img.width, h = img.height;
-      if(w > h && w > maxDim){ h = h * (maxDim/w); w = maxDim; }
-      else if(h > maxDim){ w = w * (maxDim/h); h = maxDim; }
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-      pendingImageData = dataUrl;
-      document.getElementById('upload-preview').src = dataUrl;
-      document.getElementById('upload-preview').style.display = 'block';
-      document.getElementById('upload-placeholder').style.display = 'none';
-      document.getElementById('upload-box').classList.add('has-img');
-    };
-    img.src = ev.target.result;
-  };
-  reader.readAsDataURL(file);
-});
-
 async function saveForm(){
-  const p = document.getElementById('f-part').value.trim();
-  if(!p){ showToast('Enter a part number'); return; }
-  if(!editingOriginal && parts[p]){ showToast('Part number already exists'); return; }
+  const partNumber = document.getElementById('f-part').value.trim();
+  if(!partNumber){ showToast('Enter a part number'); return; }
+  const newId = sanitizeId(partNumber);
+  if(!editingId && parts[newId]){ showToast('Part number already exists'); return; }
+
+  const who = ensureUserName();
+  const prevHistory = (editingId && parts[editingId] && parts[editingId].history) ? parts[editingId].history : [];
 
   const rec = {
-    image: pendingImageData || null,
-    piling: {
-      thickness: document.getElementById('p-thickness').value,
-      height: document.getElementById('p-height').value,
-      width: document.getElementById('p-width').value,
-      length: document.getElementById('p-length').value,
-      notes: document.getElementById('p-notes').value.trim()
-    },
-    grinding: {
-      thickness: document.getElementById('g-thickness').value,
-      height: document.getElementById('g-height').value,
-      width: document.getElementById('g-width').value,
-      length: document.getElementById('g-length').value,
-      notes: document.getElementById('g-notes').value.trim()
-    },
-    updated: Date.now()
+    partNumber,
+    customer: document.getElementById('f-customer').value.trim(),
+    drawingNo: document.getElementById('f-drawing').value.trim(),
+    revision: document.getElementById('f-revision').value.trim(),
+    images: pendingImages.slice(),
+    piling: { notes: document.getElementById('p-notes').value.trim(), dims: getDimsFromContainer('piling-dims') },
+    grinding: { notes: document.getElementById('g-notes').value.trim(), dims: getDimsFromContainer('grinding-dims') },
+    updated: Date.now(),
+    history: [{ at: Date.now(), by: who }, ...prevHistory].slice(0, 10)
   };
 
   try{
-    // handle rename: if editing and part number changed, remove old key
-    if(editingOriginal && editingOriginal !== p){
-      await window.storage.delete(keyFor(editingOriginal));
-      delete parts[editingOriginal];
+    if(editingId && editingId !== newId){
+      await removeRecord(editingId);
     }
-    await window.storage.set(keyFor(p), JSON.stringify(rec));
-    parts[p] = rec;
-    await saveIndex();
-    showToast('Saved ' + p);
-    currentPart = p;
+    await persistRecord(newId, rec);
+    showToast('Saved ' + partNumber);
+    currentPart = newId;
+    if(!CONFIG_OK){ /* local fallback already re-rendered via localSave */ }
     goHome();
   }catch(e){
-    showToast('Save failed: ' + (e && e.message ? e.message : 'unknown error'));
     console.error(e);
+    showToast('Save failed: ' + (e && e.message ? e.message : 'unknown error'));
   }
 }
 
 async function deleteCurrent(){
   if(!currentPart) return;
-  if(!confirm('Delete spec for ' + currentPart + '? This cannot be undone.')) return;
+  const rec = parts[currentPart];
+  if(!confirm('Delete spec for ' + (rec ? rec.partNumber : currentPart) + '? This cannot be undone.')) return;
   try{
-    await window.storage.delete(keyFor(currentPart));
-    delete parts[currentPart];
-    await saveIndex();
+    await removeRecord(currentPart);
     showToast('Deleted');
     goHome();
   }catch(e){
-    showToast('Delete failed');
     console.error(e);
+    showToast('Delete failed');
   }
 }
 
-loadAll();
-if(window._usingFallbackStorage){
-  setTimeout(()=>showToast('Note: persistent storage unavailable — data will reset if you close this'), 600);
+/* ---------------- Export / Import ---------------- */
+function downloadBlob(filename, content, type){
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
 }
+
+function exportJSON(){
+  const arr = Object.values(parts);
+  if(arr.length === 0){ showToast('Nothing to export yet'); return; }
+  downloadBlob('brush-spec-export-' + Date.now() + '.json', JSON.stringify(arr, null, 2), 'application/json');
+}
+
+function dimsToText(dims){
+  return (dims||[]).map(d => {
+    const meas = (d.measured !== '' && d.measured != null) ? `, measured ${d.measured}` : '';
+    return `${d.name}: ${d.nominal || '—'} ${d.unit || 'mm'} (+${d.upper || 0}/-${d.lower || 0})${meas}`;
+  }).join('; ');
+}
+
+function csvEscape(v){
+  const s = String(v == null ? '' : v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+}
+
+function exportCSV(){
+  const arr = Object.values(parts);
+  if(arr.length === 0){ showToast('Nothing to export yet'); return; }
+  const header = ['Part Number','Customer','Drawing No','Revision','Updated','Piling Dimensions','Piling Notes','Grinding Dimensions','Grinding Notes'];
+  const rows = arr.map(r => [
+    r.partNumber, r.customer, r.drawingNo, r.revision,
+    r.updated ? new Date(r.updated).toLocaleString() : '',
+    dimsToText(r.piling && r.piling.dims), (r.piling && r.piling.notes) || '',
+    dimsToText(r.grinding && r.grinding.dims), (r.grinding && r.grinding.notes) || ''
+  ]);
+  const csv = [header, ...rows].map(row => row.map(csvEscape).join(',')).join('\n');
+  downloadBlob('brush-spec-export-' + Date.now() + '.csv', csv, 'text/csv');
+}
+
+document.getElementById('import-input').addEventListener('change', async function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  try{
+    const text = await file.text();
+    const arr = JSON.parse(text);
+    if(!Array.isArray(arr)) throw new Error('Expected a JSON array of parts');
+    let count = 0;
+    for(const r of arr){
+      if(!r.partNumber) continue;
+      const id = sanitizeId(r.partNumber);
+      const rec = {
+        partNumber: r.partNumber,
+        customer: r.customer || '',
+        drawingNo: r.drawingNo || '',
+        revision: r.revision || '',
+        images: Array.isArray(r.images) ? r.images.slice(0,4) : [],
+        piling: { notes: (r.piling && r.piling.notes) || '', dims: (r.piling && r.piling.dims) || [] },
+        grinding: { notes: (r.grinding && r.grinding.notes) || '', dims: (r.grinding && r.grinding.dims) || [] },
+        updated: r.updated || Date.now(),
+        history: Array.isArray(r.history) ? r.history : []
+      };
+      await persistRecord(id, rec);
+      count++;
+    }
+    showToast('Imported ' + count + ' part(s)');
+  }catch(err){
+    console.error(err);
+    showToast('Import failed: ' + (err && err.message ? err.message : 'invalid file'));
+  }
+  e.target.value = '';
+});
+
+/* ---------------- Boot ---------------- */
+document.getElementById('whoami-name').textContent = getUserName() || 'Unknown';
+startListening();
 </script>
 </body>
 </html>
