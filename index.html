@@ -313,6 +313,24 @@
   .auth-links{display:flex;justify-content:space-between;margin-top:14px;font-size:12.5px;}
   .auth-links button{background:none;border:none;color:var(--steel);cursor:pointer;font-size:12.5px;padding:0;text-decoration:underline;}
   .signout-btn{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;padding:0;}
+
+  /* ---- Light / dark theme ---- */
+  body.theme-light{
+    --bg: #F4F0E8;
+    --panel: #FFFFFF;
+    --panel-2: #EFEAE0;
+    --line: #DDD5C4;
+    --copper: #B96A3D;
+    --copper-dim: #8F5836;
+    --steel: #3D7791;
+    --ink: #23201B;
+    --muted: #6E675C;
+  }
+  .theme-toggle{
+    width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:var(--panel);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--copper);
+    font-size:13px;line-height:1;padding:0;flex-shrink:0;
+  }
 </style>
 </head>
 <body>
@@ -344,7 +362,7 @@
   <!-- ============ HOME ============ -->
   <div class="screen active" id="screen-home">
     <header>
-      <p class="eyebrow"><span>AVO · Dimensional Reference</span><span id="conn-indicator"><span class="conn-dot" id="conn-dot"></span></span></p>
+      <p class="eyebrow"><span>AVO · Dimensional Reference</span><span style="display:flex;align-items:center;gap:10px;"><button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode"></button><span id="conn-indicator"><span class="conn-dot" id="conn-dot"></span></span></span></p>
       <h1>Brush Spec</h1>
       <p class="sub">Piling &amp; grinding measurements, by part number.</p>
     </header>
@@ -502,6 +520,21 @@ let dimCounter = 0;
 let unsubscribeSnapshot = null;
 
 const WHOAMI_KEY = 'brushspec_username';
+const THEME_KEY = 'brushspec_theme';
+
+function applyTheme(theme){
+  document.body.classList.toggle('theme-light', theme === 'light');
+  const btn = document.getElementById('theme-toggle');
+  if(btn) btn.textContent = theme === 'light' ? '☀' : '☾';
+}
+function toggleTheme(){
+  const current = localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark';
+  const next = current === 'light' ? 'dark' : 'light';
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme(next);
+}
+applyTheme(localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark');
+
 
 function sanitizeId(p){
   return String(p).trim().replace(/[^a-zA-Z0-9_\-\.]/g, '_');
@@ -695,15 +728,6 @@ function populateCustomerFilter(){
   if(customers.includes(prev)) sel.value = prev;
 }
 
-function partHasFailure(rec){
-  const dims = [...(rec.piling?.dims||[]), ...(rec.grinding?.dims||[])];
-  return dims.some(d => dimStatus(d) === 'bad');
-}
-function partHasPass(rec){
-  const dims = [...(rec.piling?.dims||[]), ...(rec.grinding?.dims||[])];
-  return dims.some(d => dimStatus(d) === 'ok');
-}
-
 function renderGrid(){
   const grid = document.getElementById('grid');
   const empty = document.getElementById('empty');
@@ -738,12 +762,10 @@ function renderGrid(){
   for(const id of ids){
     const rec = parts[id];
     const img = (rec.images && rec.images[0]) ? rec.images[0] : null;
-    const statusClass = partHasFailure(rec) ? 'bad' : (partHasPass(rec) ? 'ok' : '');
     const card = document.createElement('div');
     card.className = 'card';
     card.onclick = () => openDetail(id);
     card.innerHTML = `
-      ${statusClass ? `<div class="card-status ${statusClass}"></div>` : ''}
       <div class="card-img">${img ? `<img src="${img}">` : placeholderSVG()}</div>
       <div class="card-body">
         <div class="card-part">${escapeHtml(rec.partNumber)}</div>
@@ -757,37 +779,18 @@ document.getElementById('filter-customer').addEventListener('change', renderGrid
 document.getElementById('sort-by').addEventListener('change', renderGrid);
 
 /* ---------------- Tolerance / dimension logic ---------------- */
-function dimStatus(dim){
-  if(dim.measured === '' || dim.measured == null) return null;
-  const nominal = parseFloat(dim.nominal), meas = parseFloat(dim.measured);
-  if(isNaN(nominal) || isNaN(meas)) return null;
-  const upper = Math.abs(parseFloat(dim.upper) || 0);
-  const lower = Math.abs(parseFloat(dim.lower) || 0);
-  const max = nominal + upper, min = nominal - lower;
-  return (meas >= min && meas <= max) ? 'ok' : 'bad';
-}
-
 function fmtNum(v){ return (v === '' || v === undefined || v === null) ? null : v; }
 
 function specDimRow(dim){
   const name = escapeHtml(dim.name || 'Dimension');
   const unit = dim.unit || 'mm';
-  const nominal = fmtNum(dim.nominal);
-  const upper = fmtNum(dim.upper);
   const lower = fmtNum(dim.lower);
-  const measured = fmtNum(dim.measured);
-  let valHtml = nominal == null ? '—' : `${nominal} ${escapeHtml(unit)}`;
-  let tolHtml = '';
-  if(nominal != null && (upper != null || lower != null)){
-    tolHtml = `<span class="spec-tol">+${upper ?? '0'} / −${lower ?? '0'}</span>`;
+  const upper = fmtNum(dim.upper);
+  let valHtml = '—';
+  if(lower != null || upper != null){
+    valHtml = `${lower ?? '—'} / ${upper ?? '—'} ${escapeHtml(unit)}`;
   }
-  let chipHtml = '';
-  if(measured != null){
-    const status = dimStatus(dim);
-    valHtml = `${valHtml}<span class="spec-tol">measured ${measured}</span>`;
-    if(status) chipHtml = `<span class="chip ${status === 'ok' ? 'chip-ok' : 'chip-bad'}">${status === 'ok' ? 'PASS' : 'FAIL'}</span>`;
-  }
-  return `<div class="spec-row"><span class="spec-key">${name}</span><span style="display:flex;align-items:center;gap:8px;"><span class="spec-val">${valHtml}${tolHtml}</span>${chipHtml}</span></div>`;
+  return `<div class="spec-row"><span class="spec-key">${name}</span><span class="spec-val">${valHtml}</span></div>`;
 }
 
 function renderSpecSection(containerId, section){
@@ -841,7 +844,7 @@ function openDetail(id){
 
 /* ---------------- Dimension rows (form) ---------------- */
 function addDimRow(containerId, dim){
-  dim = dim || { name:'', unit:'mm', nominal:'', upper:'', lower:'', measured:'' };
+  dim = dim || { name:'', unit:'mm', lower:'', upper:'' };
   const rowId = 'dim' + (++dimCounter);
   const container = document.getElementById(containerId);
   const card = document.createElement('div');
@@ -853,11 +856,9 @@ function addDimRow(containerId, dim){
       <button type="button" class="dim-remove" onclick="document.getElementById('${rowId}').remove()">✕</button>
     </div>
     <div class="dim-grid">
-      <div><label>Nominal</label><input type="number" step="any" class="dim-nominal" value="${escapeHtml(dim.nominal)}"></div>
-      <div><label>Unit</label><input type="text" class="dim-unit" value="${escapeHtml(dim.unit || 'mm')}"></div>
-      <div><label>Upper (+tol)</label><input type="number" step="any" class="dim-upper" value="${escapeHtml(dim.upper)}"></div>
-      <div><label>Lower (−tol)</label><input type="number" step="any" class="dim-lower" value="${escapeHtml(dim.lower)}"></div>
-      <div style="grid-column:1/3;"><label>Measured (optional)</label><input type="number" step="any" class="dim-measured" value="${escapeHtml(dim.measured)}"></div>
+      <div><label>Lower limit</label><input type="number" step="any" class="dim-lower" value="${escapeHtml(dim.lower)}"></div>
+      <div><label>Upper limit</label><input type="number" step="any" class="dim-upper" value="${escapeHtml(dim.upper)}"></div>
+      <div style="grid-column:1/3;"><label>Unit</label><input type="text" class="dim-unit" value="${escapeHtml(dim.unit || 'mm')}"></div>
     </div>`;
   container.appendChild(card);
 }
@@ -867,23 +868,21 @@ function getDimsFromContainer(containerId){
   const out = [];
   rows.forEach(row => {
     const name = row.querySelector('.dim-name').value.trim();
-    const nominal = row.querySelector('.dim-nominal').value;
     const unit = row.querySelector('.dim-unit').value.trim() || 'mm';
     const upper = row.querySelector('.dim-upper').value;
     const lower = row.querySelector('.dim-lower').value;
-    const measured = row.querySelector('.dim-measured').value;
-    if(!name && !nominal) return; // skip fully empty rows
-    out.push({ name: name || 'Dimension', unit, nominal, upper, lower, measured });
+    if(!name && !lower && !upper) return; // skip fully empty rows
+    out.push({ name: name || 'Dimension', unit, lower, upper });
   });
   return out;
 }
 
 function defaultDims(){
   return [
-    { name:'Thickness', unit:'mm', nominal:'', upper:'', lower:'', measured:'' },
-    { name:'Height',    unit:'mm', nominal:'', upper:'', lower:'', measured:'' },
-    { name:'Width',     unit:'mm', nominal:'', upper:'', lower:'', measured:'' },
-    { name:'Length',    unit:'mm', nominal:'', upper:'', lower:'', measured:'' }
+    { name:'Thickness', unit:'mm', lower:'', upper:'' },
+    { name:'Height',    unit:'mm', lower:'', upper:'' },
+    { name:'Width',     unit:'mm', lower:'', upper:'' },
+    { name:'Length',    unit:'mm', lower:'', upper:'' }
   ];
 }
 
@@ -1077,8 +1076,7 @@ function exportJSON(){
 
 function dimsToText(dims){
   return (dims||[]).map(d => {
-    const meas = (d.measured !== '' && d.measured != null) ? `, measured ${d.measured}` : '';
-    return `${d.name}: ${d.nominal || '—'} ${d.unit || 'mm'} (+${d.upper || 0}/-${d.lower || 0})${meas}`;
+    return `${d.name}: ${d.lower || '—'} / ${d.upper || '—'} ${d.unit || 'mm'}`;
   }).join('; ');
 }
 
