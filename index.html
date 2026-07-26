@@ -20,6 +20,9 @@
     --ok: #6FAE7C;
     --warn: #D9A441;
     --danger: #C25B4F;
+    --moss: #8FA66B;
+    --plum: #9C7CA8;
+    --sand: #C2A15C;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -53,9 +56,11 @@
   /* ---- Header ---- */
   header{
     padding:22px 20px 14px 20px;
-    border-bottom:1px solid var(--line);
+    border-bottom:1px solid #2A2E33;
     background:linear-gradient(180deg,#181B1F,#14171A);
   }
+  header h1{color:#EDEAE3;}
+  header .sub{color:#9AA0A6;}
   .eyebrow{
     font-family:'IBM Plex Mono',monospace;
     font-size:11px;letter-spacing:.14em;color:var(--copper);
@@ -211,6 +216,8 @@
   .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
   .dot-piling{background:var(--copper);}
   .dot-grinding{background:var(--steel);}
+  .dot-k15{background:var(--copper);}
+  .dot-k50{background:var(--steel);}
 
   .spec-table{margin:0 16px 8px 16px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
   .spec-row{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;font-size:14px;gap:10px;}
@@ -327,10 +334,169 @@
     --muted: #6E675C;
   }
   .theme-toggle{
-    width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:var(--panel);
-    display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--copper);
+    width:26px;height:26px;border-radius:50%;border:1px solid #33393F;background:#1E2226;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;color:#C97A4D;
     font-size:13px;line-height:1;padding:0;flex-shrink:0;
   }
+
+  /* ---- Hub ---- */
+  .hub-status{
+    font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9AA0A6;margin-top:6px;
+    letter-spacing:.01em;
+  }
+  .hub-status b{color:#EDEAE3;font-weight:600;}
+  .hub-main{position:relative;overflow:hidden;}
+  .hub-watermark{
+    position:absolute;inset:0;pointer-events:none;opacity:.05;
+    background-image:repeating-linear-gradient(to right, var(--line) 0, var(--line) 1px, transparent 1px, transparent 22px),
+                      repeating-linear-gradient(to bottom, var(--line) 0, var(--line) 1px, transparent 1px, transparent 22px);
+  }
+  .hub-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;position:relative;z-index:1;}
+  .hub-tile{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 14px;
+    cursor:pointer;transition:border-color .15s, transform .1s;position:relative;overflow:hidden;
+    animation:hub-tile-in .35s ease backwards;
+  }
+  .hub-tile:nth-child(1){animation-delay:.02s;}
+  .hub-tile:nth-child(2){animation-delay:.07s;}
+  .hub-tile:nth-child(3){animation-delay:.12s;}
+  .hub-tile:nth-child(4){animation-delay:.17s;}
+  @keyframes hub-tile-in{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  .hub-tile:active{transform:scale(.97);}
+  .hub-tile:hover{border-color:var(--tile-accent, var(--copper-dim));}
+  .hub-tile-icon{
+    width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+    background:var(--panel-2);
+    background:color-mix(in srgb, var(--tile-accent, var(--copper)) 16%, transparent);
+    color:var(--tile-accent, var(--copper));margin-bottom:14px;position:relative;
+  }
+  .hub-tile-title{
+    font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:16px;color:var(--ink);
+  }
+  .hub-tile-stat{
+    font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:20px;color:var(--tile-accent, var(--ink));
+    margin-top:8px;line-height:1;
+  }
+  .hub-tile-sub{font-size:11px;color:var(--muted);margin-top:4px;}
+  .hub-pulse{
+    position:absolute;top:14px;right:14px;width:8px;height:8px;border-radius:50%;background:var(--danger);
+    box-shadow:0 0 0 0 rgba(194,91,79,.5);animation:hub-pulse 1.8s infinite;
+  }
+  @keyframes hub-pulse{
+    0%{box-shadow:0 0 0 0 rgba(194,91,79,.45);}
+    70%{box-shadow:0 0 0 8px rgba(194,91,79,0);}
+    100%{box-shadow:0 0 0 0 rgba(194,91,79,0);}
+  }
+  @media (prefers-reduced-motion: reduce){ .hub-pulse{ animation:none; } .hub-tile{ animation:none; } }
+
+  /* ---- Reusable stat blocks (Scrap module) ---- */
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 14px 0;}
+  .stat-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;}
+  .stat-card-label{font-size:11px;color:var(--muted);margin-bottom:6px;}
+  .stat-card-value{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:19px;color:var(--ink);}
+  .stat-card-sub{font-size:10.5px;color:var(--muted);margin-top:3px;}
+  .chart-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:4px;}
+  .chart-card canvas{max-width:100%;}
+
+  /* ---- Section / machine grids (Layout module) ---- */
+  .section-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .section-tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 14px;cursor:pointer;}
+  .section-tile:active{transform:scale(.98);}
+  .section-tile-name{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:17px;}
+  .section-tile-count{font-size:11.5px;color:var(--muted);margin-top:6px;}
+  .piling-legend{display:flex;gap:14px;flex-wrap:wrap;padding:0 0 14px 0;}
+  .piling-legend .legend-item{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);}
+  .piling-block-label{
+    font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:13px;
+    color:var(--muted);text-transform:uppercase;letter-spacing:.06em;
+    margin:0 0 8px 0;
+  }
+  .piling-block-label:not(:first-child){margin-top:22px;}
+  .piling-layout-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .piling-layout-grid.block2{grid-template-columns:repeat(3,1fr);grid-auto-rows:auto;}
+  .piling-tile{
+    background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--line);
+    border-radius:10px;padding:10px 8px;cursor:pointer;
+    transition:border-color .15s, transform .1s;
+  }
+  .piling-tile:active{transform:scale(.96);}
+  .piling-tile-top{display:flex;align-items:center;gap:6px;}
+  .piling-tile-name{
+    font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12.5px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .piling-tile-sub{font-size:9.5px;color:var(--muted);margin-top:5px;text-transform:uppercase;letter-spacing:.04em;}
+  .piling-tile.fam-k15{border-left-color:var(--copper);}
+  .piling-tile.fam-k15 .fam-dot{background:var(--copper);}
+  .piling-tile.fam-k50{border-left-color:var(--steel);}
+  .piling-tile.fam-k50 .fam-dot{background:var(--steel);}
+  .piling-tile.fam-a{border-left-color:var(--moss);}
+  .piling-tile.fam-a .fam-dot{background:var(--moss);}
+  .piling-tile.fam-rp{border-left-color:var(--plum);}
+  .piling-tile.fam-rp .fam-dot{background:var(--plum);}
+  .piling-tile.fam-x20{border-left-color:var(--sand);}
+  .piling-tile.fam-x20 .fam-dot{background:var(--sand);}
+  .piling-tile.is-running{border-color:var(--ok);}
+  .piling-tile.is-running .piling-tile-sub{color:var(--ok);}
+  .fam-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--muted);}
+
+  .period-toggle{display:flex;gap:8px;margin-bottom:14px;}
+  .period-btn{
+    flex:1;background:var(--panel);border:1px solid var(--line);color:var(--muted);
+    border-radius:8px;padding:9px 6px;font-family:'Inter',sans-serif;font-size:12.5px;font-weight:500;
+    cursor:pointer;
+  }
+  .period-btn.active{border-color:var(--plum);color:var(--ink);background:var(--panel-2);}
+  .chart-card{
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:12px;margin:0 0 16px 0;
+  }
+
+  .chip-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;margin-bottom:14px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  .chip-tabs::-webkit-scrollbar{display:none;}
+  .section-chip{
+    flex:0 0 auto;background:var(--panel);border:1px solid var(--line);color:var(--muted);
+    border-radius:20px;padding:7px 14px;font-family:'Inter',sans-serif;font-size:12.5px;font-weight:500;
+    cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px;
+  }
+  .section-chip .chip-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .section-chip.active{color:var(--ink);background:var(--panel-2);border-color:var(--chip-accent, var(--plum));}
+
+  .search-box{display:flex;gap:8px;margin-bottom:14px;}
+  .search-box input{flex:1;}
+  .search-box button{
+    background:var(--copper);color:#1A130D;border:none;border-radius:8px;padding:0 18px;
+    font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:14px;cursor:pointer;flex-shrink:0;
+  }
+  .run-row{
+    display:flex;align-items:center;justify-content:space-between;background:var(--panel-2);
+    border-radius:8px;padding:9px 12px;margin-bottom:6px;gap:10px;
+  }
+  .run-row-main{font-size:12.5px;font-weight:600;font-family:'IBM Plex Mono',monospace;}
+  .run-row-sub{font-size:10.5px;color:var(--muted);margin-top:2px;}
+  .chip-neutral{background:rgba(138,144,150,.15);color:var(--muted);}
+
+  .machine-list{display:flex;flex-direction:column;gap:8px;}
+  .machine-row{
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+    display:flex;align-items:center;justify-content:space-between;cursor:pointer;
+  }
+  .machine-row-name{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;}
+  .machine-row-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+  .part-row{
+    display:flex;align-items:center;justify-content:space-between;background:var(--panel-2);
+    border-radius:8px;padding:10px 12px;margin-bottom:8px;
+  }
+  .part-row-name{font-size:13.5px;font-weight:500;}
+  .part-row-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+
+  /* ---- NCR list ---- */
+  .ncr-row{
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+    display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:8px;gap:10px;
+  }
+  .ncr-row-id{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13.5px;}
+  .ncr-row-sub{font-size:11px;color:var(--muted);margin-top:2px;}
 </style>
 </head>
 <body>
@@ -359,16 +525,69 @@
 
 <div class="app">
 
-  <!-- ============ HOME ============ -->
-  <div class="screen active" id="screen-home">
+  <!-- ============ HUB ============ -->
+  <div class="screen active" id="screen-hub">
     <header>
-      <p class="eyebrow"><span>AVO · Dimensional Reference</span><span style="display:flex;align-items:center;gap:10px;"><button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode"></button><span id="conn-indicator"><span class="conn-dot" id="conn-dot"></span></span></span></p>
+      <p class="eyebrow"><span>AVO · Quality Console</span><span style="display:flex;align-items:center;gap:10px;"><button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode"></button><span id="conn-indicator"><span class="conn-dot" id="conn-dot"></span></span></span></p>
+      <h1>Quality Console</h1>
+      <p class="hub-status" id="hub-status-line">Loading live status…</p>
+    </header>
+    <div class="ruler"></div>
+    <main class="hub-main">
+      <div id="config-banner-slot"></div>
+      <div class="hub-watermark"></div>
+      <div class="hub-grid">
+        <div class="hub-tile" style="--tile-accent:var(--copper);" onclick="showScreen('screen-home'); renderGrid();">
+          <div class="hub-tile-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 16V8M20 16V8M4 12h16"/><path d="M8 8v2M12 8v3M16 8v2"/></svg></div>
+          <div class="hub-tile-title">Dimension</div>
+          <div class="hub-tile-stat" id="hub-stat-dimension">—</div>
+          <div class="hub-tile-sub">specs on file</div>
+        </div>
+        <div class="hub-tile" style="--tile-accent:var(--warn);" onclick="openScrap();">
+          <div class="hub-tile-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="9" r="6"/><path d="M9 6.5v5M7 8h4M15 15l6 6M21 15v6h-6"/></svg></div>
+          <div class="hub-tile-title">Scrap Monitoring</div>
+          <div class="hub-tile-stat" id="hub-stat-scrap">—</div>
+          <div class="hub-tile-sub" id="hub-stat-scrap-sub">today's PPM</div>
+        </div>
+        <div class="hub-tile" style="--tile-accent:var(--steel);" onclick="openLayout();">
+          <div class="hub-tile-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="5" rx="1"/><rect x="13" y="10" width="8" height="11" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/></svg></div>
+          <div class="hub-tile-title">Machine Layout</div>
+          <div class="hub-tile-stat" id="hub-stat-layout">—</div>
+          <div class="hub-tile-sub">machines running</div>
+        </div>
+        <div class="hub-tile" style="--tile-accent:var(--danger);" onclick="openNcrList();">
+          <div class="hub-pulse" id="hub-ncr-pulse" style="display:none;"></div>
+          <div class="hub-tile-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 16H3z"/><path d="M12 9v5M12 17v.01"/></svg></div>
+          <div class="hub-tile-title">Non-Conformance</div>
+          <div class="hub-tile-stat" id="hub-stat-ncr">—</div>
+          <div class="hub-tile-sub">open NCRs</div>
+        </div>
+        <div class="hub-tile" style="--tile-accent:var(--plum);" onclick="openAnalytics();">
+          <div class="hub-tile-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5M4 19h16"/><path d="M8 15l3-4 3 2 4-6"/></svg></div>
+          <div class="hub-tile-title">Analytics</div>
+          <div class="hub-tile-stat" id="hub-stat-analytics">—</div>
+          <div class="hub-tile-sub">parts run this month</div>
+        </div>
+      </div>
+      <div class="whoami" style="margin-top:18px;">Logging edits as <b id="whoami-name">—</b> · <button onclick="promptUserName()">change</button> · <span id="auth-account"></span> <button class="signout-btn" onclick="signOutUser()">sign out</button></div>
+    </main>
+  </div>
+
+  <!-- ============ HOME (Dimension) ============ -->
+  <div class="screen" id="screen-home">
+    <div class="topbar">
+      <button class="back-btn" onclick="goHub()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="topbar-title">Brush Spec</div>
+    </div>
+    <header style="border-bottom:none;padding-bottom:0;">
+      <p class="eyebrow"><span>AVO · Dimensional Reference</span></p>
       <h1>Brush Spec</h1>
       <p class="sub">Piling &amp; grinding measurements, by part number.</p>
     </header>
     <div class="ruler"></div>
     <main>
-      <div id="config-banner-slot"></div>
       <div class="search-wrap">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
         <input type="text" id="search" placeholder="Search part number or customer…" autocomplete="off">
@@ -387,7 +606,6 @@
         <button class="btn-secondary" onclick="document.getElementById('import-input').click()">⇧ Import</button>
         <input type="file" id="import-input" accept="application/json" style="display:none;">
       </div>
-      <div class="whoami">Logging edits as <b id="whoami-name">—</b> · <button onclick="promptUserName()">change</button> · <span id="auth-account"></span> <button class="signout-btn" onclick="signOutUser()">sign out</button></div>
       <div id="grid" class="grid"></div>
       <div id="empty" class="empty" style="display:none;">
         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
@@ -488,6 +706,257 @@
     </div>
   </div>
 
+  <!-- ============ SCRAP MONITORING ============ -->
+  <div class="screen" id="screen-scrap">
+    <div class="topbar">
+      <button class="back-btn" onclick="goHub()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="topbar-title">Scrap Monitoring</div>
+    </div>
+    <main style="padding-top:16px;">
+      <div class="dim-card" style="margin:0 0 14px 0;">
+        <div class="dim-card-head" style="margin-bottom:12px;">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:16px;">Today's entry</span>
+          <span style="font-size:11px;color:var(--muted);" id="scrap-today-label"></span>
+        </div>
+        <div class="dim-grid">
+          <div><label>Scrap cost (₹)</label><input type="number" step="any" id="scrap-cost" placeholder="e.g. 21500"></div>
+          <div><label>PPM</label><input type="number" step="any" id="scrap-ppm" placeholder="e.g. 780"></div>
+        </div>
+        <button class="btn-primary" style="margin-top:12px;" onclick="saveScrapEntry()" id="scrap-save-btn">Save today's entry</button>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-card-label">Today's scrap cost</div><div class="stat-card-value" id="stat-today-cost">—</div></div>
+        <div class="stat-card"><div class="stat-card-label">Today's PPM</div><div class="stat-card-value" id="stat-today-ppm">—</div></div>
+        <div class="stat-card"><div class="stat-card-label" id="stat-month-cost-label">This month's cost</div><div class="stat-card-value" id="stat-month-cost">—</div></div>
+        <div class="stat-card"><div class="stat-card-label" id="stat-month-ppm-label">This month's avg PPM</div><div class="stat-card-value" id="stat-month-ppm">—</div></div>
+      </div>
+
+      <div class="chart-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:15px;">Trend analysis</span>
+          <span class="chip chip-ok" style="background:rgba(76,140,168,.15);color:var(--steel);">Cost (bars) vs PPM (line)</span>
+        </div>
+        <canvas id="scrap-chart" height="220"></canvas>
+        <div class="spec-empty" id="scrap-chart-empty" style="display:none;">No scrap entries logged yet.</div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============ MACHINE LAYOUT — SECTIONS ============ -->
+  <div class="screen" id="screen-layout-sections">
+    <div class="topbar">
+      <button class="back-btn" onclick="goHub()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="topbar-title">Machine Layout</div>
+    </div>
+    <main style="padding-top:16px;">
+      <div class="section-grid" id="layout-section-grid"></div>
+    </main>
+  </div>
+
+  <!-- ============ MACHINE LAYOUT — MACHINES IN SECTION ============ -->
+  <div class="screen" id="screen-layout-machines">
+    <div class="topbar">
+      <button class="back-btn" onclick="showScreen('screen-layout-sections')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="topbar-title" id="layout-machines-title">Section</div>
+    </div>
+    <main style="padding-top:16px;">
+      <div class="piling-legend" id="layout-machine-legend" style="display:none;"></div>
+      <div class="machine-list" id="layout-machine-list"></div>
+    </main>
+  </div>
+
+  <!-- ============ MACHINE LAYOUT — MACHINE DETAIL ============ -->
+  <div class="screen" id="screen-layout-machine">
+    <div class="topbar">
+      <button class="back-btn" onclick="showScreen('screen-layout-machines')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="topbar-title" id="layout-machine-title">Machine</div>
+    </div>
+    <main style="padding-top:16px;">
+      <div class="section-label" style="padding:0 0 8px 0;">Parts currently running</div>
+      <div id="machine-parts-list"></div>
+      <div class="spec-empty" id="machine-parts-empty" style="display:none;">No part logged on this machine.</div>
+
+      <div class="dim-card" style="margin-top:16px;">
+        <div class="dim-card-head" style="margin-bottom:12px;">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:15px;">Add a running part</span>
+        </div>
+        <div class="field" style="padding:0 0 8px 0;"><label>Part No.</label><input type="text" id="lm-partno" placeholder="e.g. PN-3381"></div>
+        <div class="field" style="padding:0 0 12px 0;"><label>Part name</label><input type="text" id="lm-partname" placeholder="e.g. Bearing Race"></div>
+        <button class="btn-primary" onclick="addRunningPart()">+ Add part</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============ NCR — LIST ============ -->
+  <div class="screen" id="screen-ncr-list">
+    <div class="topbar">
+      <button class="back-btn" onclick="goHub()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="topbar-title">Non-Conformance</div>
+    </div>
+    <main style="padding-top:16px;">
+      <div id="ncr-list"></div>
+      <div class="spec-empty" id="ncr-list-empty" style="display:none;">No NCRs raised yet.</div>
+    </main>
+    <div class="fab"><div class="fab-inner">
+      <button class="btn-primary" onclick="openNcrForm()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+        Raise NCR
+      </button>
+    </div></div>
+  </div>
+
+  <!-- ============ NCR — FORM ============ -->
+  <div class="screen" id="screen-ncr-form">
+    <div class="topbar">
+      <button class="back-btn" onclick="showScreen('screen-ncr-list')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="topbar-title">Raise NCR</div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Section</label>
+        <select id="ncr-section"></select>
+      </div>
+      <div class="field"><label>Machine</label><input type="text" id="ncr-machine" placeholder="e.g. GRD-02"></div>
+    </div>
+    <div class="field"><label>Part number</label><input type="text" id="ncr-partno" placeholder="e.g. PN-2290"></div>
+    <div class="field"><label>Description</label><textarea id="ncr-description" placeholder="Describe the non-conformance…"></textarea></div>
+
+    <div class="field" style="margin-top:6px;"><label>Photo</label></div>
+    <div class="upload-box" id="ncr-upload-box" onclick="document.getElementById('ncr-image').click()">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      <div style="margin-top:6px;">Tap to upload a photo</div>
+      <input type="file" id="ncr-image" accept="image/*">
+    </div>
+    <div class="form-gallery" id="ncr-form-gallery"></div>
+
+    <div class="dim-card" style="margin-top:14px;">
+      <div class="dim-card-head" style="margin-bottom:10px;">
+        <span style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:15px;">Dimension check</span>
+      </div>
+      <div class="dim-grid" style="grid-template-columns:1fr 1fr 1fr;">
+        <div><label>Nominal</label><input type="text" id="ncr-nominal"></div>
+        <div><label>Actual</label><input type="text" id="ncr-actual"></div>
+        <div><label>Tolerance</label><input type="text" id="ncr-tolerance"></div>
+      </div>
+      <div style="margin-top:8px;"><label style="display:block;font-size:10.5px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;">Unit</label><input type="text" id="ncr-unit" value="mm"></div>
+    </div>
+
+    <div class="field"><label>Root cause (if known)</label><textarea id="ncr-rootcause" placeholder="e.g. Wheel wear beyond dressing interval"></textarea></div>
+    <div class="field"><label>Containment action</label><textarea id="ncr-containment" placeholder="e.g. 100% sort of last 2 hrs production"></textarea></div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Disposition</label>
+        <select id="ncr-disposition">
+          <option>Rework</option>
+          <option>Scrap</option>
+          <option>Use As Is</option>
+          <option>Return to Supplier</option>
+        </select>
+      </div>
+      <div class="field"><label>Raised by</label><input type="text" id="ncr-raisedby" placeholder="Your name"></div>
+    </div>
+
+    <div class="form-actions" style="padding-bottom:40px;">
+      <button class="btn-primary" onclick="saveNcr()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg>
+        Submit NCR
+      </button>
+      <button class="btn-secondary" onclick="showScreen('screen-ncr-list')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- ============ NCR — DETAIL ============ -->
+  <div class="screen" id="screen-ncr-detail">
+    <div class="topbar">
+      <button class="back-btn" onclick="showScreen('screen-ncr-list')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="topbar-title" id="ncr-detail-title">NCR</div>
+    </div>
+    <div class="gallery" id="ncr-detail-gallery"></div>
+    <div class="part-header">
+      <div class="part-title" id="ncr-detail-id"></div>
+      <div class="part-updated" id="ncr-detail-meta"></div>
+    </div>
+    <div class="info-strip" id="ncr-detail-info"></div>
+    <div class="spec-note" id="ncr-detail-desc" style="font-style:normal;"></div>
+
+    <div class="section-label"><span class="section-label-l">Dimension check</span></div>
+    <div class="spec-table" id="ncr-detail-dims"></div>
+
+    <div class="section-label"><span class="section-label-l">Root cause</span></div>
+    <div class="spec-note" id="ncr-detail-rootcause" style="font-style:normal;"></div>
+
+    <div class="section-label"><span class="section-label-l">Containment</span></div>
+    <div class="spec-note" id="ncr-detail-containment" style="font-style:normal;"></div>
+
+    <div class="form-actions" style="padding-bottom:40px;">
+      <button class="btn-primary" id="ncr-close-btn" onclick="closeNcr()">Close NCR</button>
+    </div>
+  </div>
+
+  <!-- ============ ANALYTICS ============ -->
+  <div class="screen" id="screen-analytics">
+    <div class="topbar">
+      <button class="back-btn" onclick="goHub()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="topbar-title">Analytics</div>
+    </div>
+    <main style="padding-top:16px;">
+      <div class="period-toggle" id="analytics-period-toggle">
+        <button class="period-btn" data-period="week" onclick="setAnalyticsPeriod('week')">7 days</button>
+        <button class="period-btn" data-period="month" onclick="setAnalyticsPeriod('month')">30 days</button>
+        <button class="period-btn" data-period="year" onclick="setAnalyticsPeriod('year')">12 months</button>
+      </div>
+
+      <div class="section-label" style="padding-left:0;padding-right:0;">Section overview <span style="font-weight:400;color:var(--muted);font-size:12px;">(tap a bar to drill in)</span></div>
+      <div class="chart-card"><canvas id="analytics-section-chart" height="180"></canvas></div>
+
+      <div class="chip-tabs" id="analytics-section-tabs"></div>
+
+      <div class="info-strip" style="padding:0 0 4px 0;" id="analytics-summary"></div>
+
+      <div class="section-label" style="padding-left:0;padding-right:0;" id="analytics-trend-label">Machines running per day</div>
+      <div class="chart-card"><canvas id="analytics-trend-chart" height="160"></canvas></div>
+
+      <div class="section-label" style="padding-left:0;padding-right:0;" id="analytics-machine-label">Parts run &amp; uptime by machine</div>
+      <div class="chart-card"><canvas id="analytics-machine-chart" height="220"></canvas></div>
+
+      <div class="section-label" style="padding-left:0;padding-right:0;" id="analytics-parts-label">Top parts by runs</div>
+      <div class="chart-card"><canvas id="analytics-parts-chart" height="200"></canvas></div>
+
+      <div class="spec-empty" id="analytics-empty" style="display:none;">No machine activity logged yet — data builds up as parts are started and completed.</div>
+
+      <div class="data-row" style="margin-top:16px;">
+        <button class="btn-secondary" onclick="exportAnalyticsExcel()">⇩ Export Excel</button>
+        <button class="btn-secondary" onclick="exportAnalyticsPDF()">⇩ Export PDF</button>
+      </div>
+
+      <div class="section-label" style="padding-left:0;padding-right:0;margin-top:24px;">Search by part number</div>
+      <p class="sub" style="margin:-4px 0 12px 0;">See every machine a part has run on, and how many times, across all recorded history.</p>
+      <div class="search-box">
+        <input type="text" id="part-search-input" placeholder="e.g. OFBC-028" onkeydown="if(event.key==='Enter'){searchPart();}">
+        <button onclick="searchPart()">Search</button>
+      </div>
+      <div id="part-search-results"></div>
+    </main>
+  </div>
+
 </div>
 <div class="toast" id="toast"></div>
 
@@ -495,6 +964,12 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<!-- Chart.js for the scrap trend + analytics charts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<!-- SheetJS + jsPDF for Analytics export -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 
 <script>
 /* =========================================================================
@@ -519,6 +994,51 @@ let pendingImages = [];    // array of dataURLs for the form
 let dimCounter = 0;
 let unsubscribeSnapshot = null;
 
+// ---- Hub / new modules state ----
+let machines = {};          // machineCode -> { section, parts:[...], updated }
+let scrapEntries = {};      // 'YYYY-MM-DD' -> { date, cost, ppm, updated, by }
+let ncrs = {};               // ncrId -> record
+let sessions = {};           // sessionId -> completed run record {machine, partNo, startedAtMs, endedAtMs}
+let currentSection = null;
+let currentMachine = null;
+let currentNcr = null;
+let pendingNcrImage = null;
+let scrapChartInstance = null;
+let analyticsTrendChart = null, analyticsMachineChart = null, analyticsSectionChart = null, analyticsPartsChart = null, partSearchChart = null;
+let analyticsPeriod = 'month'; // 'week' | 'month' | 'year'
+let analyticsSection = 'all';  // 'all' | one of SECTIONS[].id
+const SECTION_ACCENT_VAR = { piling:'--copper', grinding:'--steel', welding:'--plum', baking:'--warn', cds:'--moss', fhp:'--danger' };
+let unsubMachines = null, unsubScrap = null, unsubNcrs = null, unsubSessions = null;
+
+const SECTIONS = [
+  { id:'piling',   name:'Piling',   machines:['K15-3','K15-2','K15-1','K50-5','K50-4','K50-1','K50-2','K50-3',
+                                                'RP-1','A-2','RP-2','X20-3','A-13','A-6','X20-2','A-14','A-8','X20-1','A-18','A-10'] },
+  { id:'grinding', name:'Grinding', machines:['GRD-01','GRD-02','GRD-03'] },
+  { id:'welding',  name:'Welding',  machines:['WLD-01','WLD-02','WLD-03','WLD-04'] },
+  { id:'baking',   name:'Baking',   machines:['BAK-01','BAK-02'] },
+  { id:'cds',      name:'CDS',      machines:['CDS-01','CDS-02','CDS-03'] },
+  { id:'fhp',      name:'FHP',      machines:['FHP-01','FHP-02'] },
+];
+
+// Piling's physical floor layout, split into its two blocks.
+// Block 1 flows left-to-right, 4 per row (matches the K15/K50 photo).
+const PILING_BLOCK1 = ['K15-3','K15-2','K15-1','K50-5','K50-4','K50-1','K50-2','K50-3'];
+// Block 2 is irregular, so each machine gets an explicit grid position (col/row, 1-indexed).
+const PILING_BLOCK2 = [
+  { code:'RP-1',  col:2, row:1 },
+  { code:'A-2',   col:1, row:2 },
+  { code:'RP-2',  col:2, row:2 },
+  { code:'X20-3', col:3, row:2 },
+  { code:'A-13',  col:1, row:3 },
+  { code:'A-6',   col:2, row:3 },
+  { code:'X20-2', col:3, row:3 },
+  { code:'A-14',  col:1, row:4 },
+  { code:'A-8',   col:2, row:4 },
+  { code:'X20-1', col:3, row:4 },
+  { code:'A-18',  col:1, row:5 },
+  { code:'A-10',  col:2, row:5 },
+];
+
 const WHOAMI_KEY = 'brushspec_username';
 const THEME_KEY = 'brushspec_theme';
 
@@ -532,6 +1052,15 @@ function toggleTheme(){
   const next = current === 'light' ? 'dark' : 'light';
   localStorage.setItem(THEME_KEY, next);
   applyTheme(next);
+  if(document.getElementById('screen-scrap') && document.getElementById('screen-scrap').classList.contains('active')){
+    renderScrapChart();
+  }
+  if(document.getElementById('screen-analytics') && document.getElementById('screen-analytics').classList.contains('active')){
+    renderAnalytics();
+    if(partSearchChart && document.getElementById('part-search-input').value.trim()){
+      searchPart();
+    }
+  }
 }
 applyTheme(localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark');
 
@@ -580,6 +1109,10 @@ function showAuthGate(msg){
   document.getElementById('auth-gate').style.display = 'flex';
   document.getElementById('auth-error').textContent = msg || '';
   if(unsubscribeSnapshot){ unsubscribeSnapshot(); unsubscribeSnapshot = null; }
+  if(unsubMachines){ unsubMachines(); unsubMachines = null; }
+  if(unsubScrap){ unsubScrap(); unsubScrap = null; }
+  if(unsubNcrs){ unsubNcrs(); unsubNcrs = null; }
+  if(unsubSessions){ unsubSessions(); unsubSessions = null; }
 }
 function hideAuthGate(){
   document.getElementById('auth-gate').style.display = 'none';
@@ -646,56 +1179,98 @@ function showConfigBanner(){
 }
 
 /* ---------------- Local fallback (used only if Firebase isn't configured) ---------------- */
-let memStore = {};
-function localLoadAll(){
-  parts = JSON.parse(JSON.stringify(memStore));
-  renderGrid();
-  populateCustomerFilter();
+let memStore = { parts:{}, machines:{}, scrapEntries:{}, ncrs:{}, sessions:{} };
+function localLoadAll(coll){
+  if(coll === 'parts'){
+    parts = JSON.parse(JSON.stringify(memStore.parts));
+    renderGrid();
+    populateCustomerFilter();
+  } else if(coll === 'machines'){
+    machines = JSON.parse(JSON.stringify(memStore.machines));
+    renderLayoutSections(); renderLayoutMachines(); renderMachineDetail(); renderAnalytics();
+  } else if(coll === 'scrapEntries'){
+    scrapEntries = JSON.parse(JSON.stringify(memStore.scrapEntries));
+    renderScrapScreen();
+  } else if(coll === 'ncrs'){
+    ncrs = JSON.parse(JSON.stringify(memStore.ncrs));
+    renderNcrList();
+  } else if(coll === 'sessions'){
+    sessions = JSON.parse(JSON.stringify(memStore.sessions));
+    renderAnalytics();
+  }
+  updateHubStats();
 }
-async function localSave(id, rec){ memStore[id] = rec; localLoadAll(); }
-async function localDelete(id){ delete memStore[id]; localLoadAll(); }
+async function localSave(coll, id, rec){ memStore[coll][id] = rec; localLoadAll(coll); }
+async function localDelete(coll, id){ delete memStore[coll][id]; localLoadAll(coll); }
 
 /* ---------------- Data layer (Firestore or local fallback) ---------------- */
-function startListening(){
-  if(!CONFIG_OK || !db){
-    showConfigBanner();
-    setConnDot('off');
-    localLoadAll();
-    return;
-  }
-  setConnDot('wait');
-  unsubscribeSnapshot = db.collection('parts').onSnapshot(
+function listenCollection(coll, onData){
+  return db.collection(coll).onSnapshot(
     snapshot => {
-      parts = {};
-      snapshot.forEach(doc => { parts[doc.id] = doc.data(); });
-      setConnDot('live');
-      renderGrid();
-      populateCustomerFilter();
-      if(document.getElementById('screen-detail').classList.contains('active') && currentPart){
-        if(parts[currentPart]) openDetail(currentPart);
-        else goHome();
-      }
+      const map = {};
+      snapshot.forEach(doc => { map[doc.id] = doc.data(); });
+      onData(map);
+      updateHubStats();
     },
     err => {
-      console.error('Firestore listen failed', err);
-      setConnDot('off');
+      console.error('Firestore listen failed (' + coll + ')', err);
       showToast('Sync error: ' + (err && err.message ? err.message : 'check Firestore rules'));
     }
   );
 }
 
-async function persistRecord(id, rec){
+function startListening(){
+  if(!CONFIG_OK || !db){
+    showConfigBanner();
+    setConnDot('off');
+    ['parts','machines','scrapEntries','ncrs','sessions'].forEach(localLoadAll);
+    return;
+  }
+  setConnDot('wait');
+  unsubscribeSnapshot = listenCollection('parts', map => {
+    parts = map;
+    setConnDot('live');
+    renderGrid();
+    populateCustomerFilter();
+    if(document.getElementById('screen-detail').classList.contains('active') && currentPart){
+      if(parts[currentPart]) openDetail(currentPart);
+      else goHome();
+    }
+  });
+  unsubMachines = listenCollection('machines', map => {
+    machines = map;
+    renderLayoutSections(); renderLayoutMachines(); renderMachineDetail(); renderAnalytics();
+  });
+  unsubScrap = listenCollection('scrapEntries', map => {
+    scrapEntries = map;
+    renderScrapScreen();
+  });
+  unsubNcrs = listenCollection('ncrs', map => {
+    ncrs = map;
+    renderNcrList();
+    if(document.getElementById('screen-ncr-detail').classList.contains('active') && currentNcr){
+      if(ncrs[currentNcr]) openNcrDetail(currentNcr);
+      else showScreen('screen-ncr-list');
+    }
+  });
+  unsubSessions = listenCollection('sessions', map => {
+    sessions = map;
+    renderAnalytics();
+  });
+}
+
+async function persistRecord(coll, id, rec){
   if(CONFIG_OK && db){
-    await db.collection('parts').doc(id).set(rec);
+    await db.collection(coll).doc(id).set(rec);
   } else {
-    await localSave(id, rec);
+    await localSave(coll, id, rec);
   }
 }
-async function removeRecord(id){
+async function removeRecord(coll, id){
   if(CONFIG_OK && db){
-    await db.collection('parts').doc(id).delete();
+    await db.collection(coll).doc(id).delete();
   } else {
-    await localDelete(id);
+    await localDelete(coll, id);
   }
 }
 
@@ -712,6 +1287,67 @@ function showScreen(id){
   window.scrollTo(0,0);
 }
 function goHome(){ showScreen('screen-home'); renderGrid(); }
+function goHub(){ showScreen('screen-hub'); updateHubStats(); }
+
+/* ---------------- Hub live stats ---------------- */
+function todayKey(){
+  const d = new Date();
+  const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+}
+function updateHubStats(){
+  // Dimension
+  const dimCount = Object.keys(parts).length;
+  const dimEl = document.getElementById('hub-stat-dimension');
+  if(dimEl) dimEl.textContent = dimCount;
+
+  // Scrap — today's PPM
+  const today = scrapEntries[todayKey()];
+  const scrapEl = document.getElementById('hub-stat-scrap');
+  const scrapSubEl = document.getElementById('hub-stat-scrap-sub');
+  if(scrapEl){
+    if(today){ scrapEl.textContent = today.ppm; if(scrapSubEl) scrapSubEl.textContent = "today's PPM · ₹" + Number(today.cost).toLocaleString('en-IN'); }
+    else { scrapEl.textContent = '—'; if(scrapSubEl) scrapSubEl.textContent = 'no entry today'; }
+  }
+
+  // Machine layout — running / total
+  let totalMachines = 0, runningMachines = 0;
+  SECTIONS.forEach(s => {
+    totalMachines += s.machines.length;
+    s.machines.forEach(m => { if(machines[m] && (machines[m].parts||[]).length > 0) runningMachines++; });
+  });
+  const layoutEl = document.getElementById('hub-stat-layout');
+  if(layoutEl) layoutEl.textContent = runningMachines + ' / ' + totalMachines;
+
+  // NCR — open count
+  const openNcrs = Object.values(ncrs).filter(n => n.status === 'Open').length;
+  const ncrEl = document.getElementById('hub-stat-ncr');
+  if(ncrEl) ncrEl.textContent = openNcrs;
+  const pulse = document.getElementById('hub-ncr-pulse');
+  if(pulse) pulse.style.display = openNcrs > 0 ? 'block' : 'none';
+
+  // Status strip
+  const statusLine = document.getElementById('hub-status-line');
+  if(statusLine){
+    statusLine.innerHTML = `<b>${openNcrs}</b> open NCR${openNcrs===1?'':'s'} · <b>${runningMachines}/${totalMachines}</b> machines running · today's PPM <b>${today ? today.ppm : '—'}</b>`;
+  }
+
+  // Analytics — parts started in the trailing 30 days
+  const analyticsEl = document.getElementById('hub-stat-analytics');
+  if(analyticsEl){
+    const since = Date.now() - 30*24*60*60*1000;
+    let count = 0;
+    Object.values(sessions).forEach(s => {
+      const t = s.startedAtMs || (s.startedAt ? new Date(s.startedAt).getTime() : 0);
+      if(t >= since) count++;
+    });
+    Object.values(machines).forEach(rec => (rec.parts||[]).forEach(p => {
+      const t = p.startedAtMs || (p.startedAt ? new Date(p.startedAt).getTime() : 0);
+      if(t >= since) count++;
+    }));
+    analyticsEl.textContent = count;
+  }
+}
 function placeholderSVG(){
   return '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
 }
@@ -1031,9 +1667,9 @@ async function saveForm(){
 
   try{
     if(editingId && editingId !== newId){
-      await removeRecord(editingId);
+      await removeRecord('parts', editingId);
     }
-    await persistRecord(newId, rec);
+    await persistRecord('parts', newId, rec);
     showToast('Saved ' + partNumber);
     currentPart = newId;
     if(!CONFIG_OK){ /* local fallback already re-rendered via localSave */ }
@@ -1049,7 +1685,7 @@ async function deleteCurrent(){
   const rec = parts[currentPart];
   if(!confirm('Delete spec for ' + (rec ? rec.partNumber : currentPart) + '? This cannot be undone.')) return;
   try{
-    await removeRecord(currentPart);
+    await removeRecord('parts', currentPart);
     showToast('Deleted');
     goHome();
   }catch(e){
@@ -1121,7 +1757,7 @@ document.getElementById('import-input').addEventListener('change', async functio
         updated: r.updated || Date.now(),
         history: Array.isArray(r.history) ? r.history : []
       };
-      await persistRecord(id, rec);
+      await persistRecord('parts', id, rec);
       count++;
     }
     showToast('Imported ' + count + ' part(s)');
@@ -1131,6 +1767,844 @@ document.getElementById('import-input').addEventListener('change', async functio
   }
   e.target.value = '';
 });
+
+/* =========================================================================
+   SCRAP MONITORING
+   ========================================================================= */
+function openScrap(){ showScreen('screen-scrap'); renderScrapScreen(); }
+
+function renderScrapScreen(){
+  if(!document.getElementById('screen-scrap')) return;
+  const key = todayKey();
+  document.getElementById('scrap-today-label').textContent = key;
+  const today = scrapEntries[key];
+  document.getElementById('scrap-cost').value = today ? today.cost : '';
+  document.getElementById('scrap-ppm').value = today ? today.ppm : '';
+  document.getElementById('scrap-save-btn').textContent = today ? "Update today's entry" : "Save today's entry";
+
+  document.getElementById('stat-today-cost').textContent = today ? '₹' + Number(today.cost).toLocaleString('en-IN') : '—';
+  document.getElementById('stat-today-ppm').textContent = today ? today.ppm : '—';
+
+  const monthPrefix = key.slice(0,7);
+  const monthEntries = Object.values(scrapEntries).filter(e => e.date.slice(0,7) === monthPrefix);
+  const monthCost = monthEntries.reduce((a,e) => a + Number(e.cost||0), 0);
+  const monthPpmAvg = monthEntries.length ? Math.round(monthEntries.reduce((a,e) => a + Number(e.ppm||0), 0) / monthEntries.length) : 0;
+  const monthName = new Date().toLocaleDateString('en-IN', { month:'short', year:'numeric' });
+  document.getElementById('stat-month-cost-label').textContent = monthName + ' cost';
+  document.getElementById('stat-month-ppm-label').textContent = monthName + ' avg PPM';
+  document.getElementById('stat-month-cost').textContent = '₹' + monthCost.toLocaleString('en-IN');
+  document.getElementById('stat-month-ppm').textContent = monthEntries.length ? monthPpmAvg : '—';
+
+  renderScrapChart();
+}
+
+async function saveScrapEntry(){
+  const cost = document.getElementById('scrap-cost').value;
+  const ppm = document.getElementById('scrap-ppm').value;
+  if(cost === '' || ppm === ''){ showToast('Enter both cost and PPM'); return; }
+  const who = ensureUserName();
+  const key = todayKey();
+  try{
+    await persistRecord('scrapEntries', key, { date:key, cost:Number(cost), ppm:Number(ppm), updated:Date.now(), by:who });
+    showToast('Saved today\'s scrap entry');
+  }catch(e){
+    console.error(e);
+    showToast('Save failed: ' + (e && e.message ? e.message : 'unknown error'));
+  }
+}
+
+function scrapChartColors(){
+  const light = document.body.classList.contains('theme-light');
+  return {
+    grid: light ? '#DDD5C4' : '#33393F',
+    tick: light ? '#6E675C' : '#8A9096',
+    cost: light ? '#B96A3D' : '#C97A4D',
+    ppm:  light ? '#3D7791' : '#4C8CA8',
+  };
+}
+
+function renderScrapChart(){
+  const canvas = document.getElementById('scrap-chart');
+  if(!canvas || typeof Chart === 'undefined') return;
+  const entries = Object.values(scrapEntries).sort((a,b) => a.date.localeCompare(b.date));
+  const emptyEl = document.getElementById('scrap-chart-empty');
+  if(entries.length === 0){
+    if(scrapChartInstance){ scrapChartInstance.destroy(); scrapChartInstance = null; }
+    canvas.style.display = 'none';
+    if(emptyEl) emptyEl.style.display = 'block';
+    return;
+  }
+  canvas.style.display = 'block';
+  if(emptyEl) emptyEl.style.display = 'none';
+
+  const labels = entries.map(e => e.date.slice(5));
+  const costData = entries.map(e => Number(e.cost||0));
+  const ppmData = entries.map(e => Number(e.ppm||0));
+  const c = scrapChartColors();
+
+  if(scrapChartInstance) scrapChartInstance.destroy();
+  scrapChartInstance = new Chart(canvas.getContext('2d'), {
+    data: {
+      labels,
+      datasets: [
+        { type:'bar', label:'Scrap cost (₹)', data:costData, backgroundColor:c.cost, borderRadius:3, yAxisID:'cost', order:2 },
+        { type:'line', label:'PPM', data:ppmData, borderColor:c.ppm, backgroundColor:c.ppm, tension:.3, pointRadius:2.5, borderWidth:2.5, yAxisID:'ppm', order:1 },
+      ]
+    },
+    options: {
+      responsive:true,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{ legend:{ labels:{ color:c.tick, font:{ size:11 } } } },
+      scales:{
+        x:{ ticks:{ color:c.tick, font:{ size:10 } }, grid:{ color:c.grid } },
+        cost:{ position:'left', ticks:{ color:c.tick, font:{ size:10 } }, grid:{ color:c.grid } },
+        ppm:{ position:'right', ticks:{ color:c.tick, font:{ size:10 } }, grid:{ display:false } },
+      }
+    }
+  });
+}
+
+/* =========================================================================
+   MACHINE LAYOUT
+   ========================================================================= */
+function openLayout(){ currentSection = null; currentMachine = null; showScreen('screen-layout-sections'); renderLayoutSections(); }
+
+function renderLayoutSections(){
+  const grid = document.getElementById('layout-section-grid');
+  if(!grid) return;
+  grid.innerHTML = SECTIONS.map(s => {
+    const running = s.machines.filter(m => machines[m] && (machines[m].parts||[]).length > 0).length;
+    return `<div class="section-tile" onclick="openLayoutSection('${s.id}')">
+      <div class="section-tile-name">${s.name}</div>
+      <div class="section-tile-count">${running}/${s.machines.length} running</div>
+    </div>`;
+  }).join('');
+}
+
+function openLayoutSection(id){
+  currentSection = id;
+  showScreen('screen-layout-machines');
+  renderLayoutMachines();
+}
+
+function renderLayoutMachines(){
+  const list = document.getElementById('layout-machine-list');
+  const legend = document.getElementById('layout-machine-legend');
+  if(!list || !currentSection) return;
+  const s = SECTIONS.find(x => x.id === currentSection);
+  if(!s) return;
+  document.getElementById('layout-machines-title').textContent = s.name + ' — machines';
+
+  if(currentSection === 'piling'){
+    if(legend){
+      legend.style.display = 'flex';
+      legend.innerHTML = `
+        <span class="legend-item"><span class="dot dot-k15"></span>K15 line</span>
+        <span class="legend-item"><span class="dot" style="background:var(--steel);"></span>K50 line</span>
+        <span class="legend-item"><span class="dot" style="background:var(--moss);"></span>A line</span>
+        <span class="legend-item"><span class="dot" style="background:var(--plum);"></span>RP line</span>
+        <span class="legend-item"><span class="dot" style="background:var(--sand);"></span>X20 line</span>`;
+    }
+
+    const tileHtml = (m) => {
+      const count = machines[m] ? (machines[m].parts||[]).length : 0;
+      const running = count > 0;
+      const fam = (m.match(/^[A-Za-z]+/) || ['?'])[0].toLowerCase();
+      return `<div class="piling-tile fam-${fam} ${running ? 'is-running' : ''}" onclick="openMachine('${m}')">
+        <div class="piling-tile-top"><span class="fam-dot"></span><span class="piling-tile-name">${m}</span></div>
+        <div class="piling-tile-sub">${running ? count + ' part' + (count===1?'':'s') : 'idle'}</div>
+      </div>`;
+    };
+
+    const block1Html = PILING_BLOCK1.map(tileHtml).join('');
+    const block2Html = PILING_BLOCK2.map(m => {
+      return `<div style="grid-column:${m.col};grid-row:${m.row};">${tileHtml(m.code)}</div>`;
+    }).join('');
+
+    list.className = '';
+    list.innerHTML = `
+      <div class="piling-block-label">Block 1</div>
+      <div class="piling-layout-grid">${block1Html}</div>
+      <div class="piling-block-label">Block 2</div>
+      <div class="piling-layout-grid block2">${block2Html}</div>`;
+    return;
+  }
+
+  if(legend) legend.style.display = 'none';
+  list.className = 'machine-list';
+  list.innerHTML = s.machines.map(m => {
+    const count = machines[m] ? (machines[m].parts||[]).length : 0;
+    const chip = count > 0 ? '<span class="chip chip-ok">RUNNING</span>' : '<span class="chip" style="background:var(--panel-2);color:var(--muted);">IDLE</span>';
+    return `<div class="machine-row" onclick="openMachine('${m}')">
+      <div><div class="machine-row-name">${m}</div><div class="machine-row-sub">${count} part${count===1?'':'s'} logged</div></div>
+      ${chip}
+    </div>`;
+  }).join('');
+}
+
+function openMachine(code){
+  currentMachine = code;
+  showScreen('screen-layout-machine');
+  renderMachineDetail();
+}
+
+function renderMachineDetail(){
+  const listEl = document.getElementById('machine-parts-list');
+  const emptyEl = document.getElementById('machine-parts-empty');
+  if(!listEl || !currentMachine) return;
+  document.getElementById('layout-machine-title').textContent = currentMachine;
+  const rec = machines[currentMachine];
+  const list = (rec && rec.parts) || [];
+  if(list.length === 0){
+    listEl.innerHTML = '';
+    if(emptyEl) emptyEl.style.display = 'block';
+  } else {
+    if(emptyEl) emptyEl.style.display = 'none';
+    listEl.innerHTML = list.map(p => `
+      <div class="part-row">
+        <div><div class="part-row-name">${escapeHtml(p.partNo)} · ${escapeHtml(p.partName||'—')}</div><div class="part-row-sub">since ${p.startedAt}</div></div>
+        <button class="dim-remove" onclick="removeRunningPart('${p.id}')">✕</button>
+      </div>`).join('');
+  }
+}
+
+async function addRunningPart(){
+  const partNo = document.getElementById('lm-partno').value.trim();
+  const partName = document.getElementById('lm-partname').value.trim();
+  if(!partNo){ showToast('Enter a part number'); return; }
+  const rec = machines[currentMachine] || { section:currentSection, parts:[] };
+  const entry = { id: currentMachine + '-' + Date.now(), partNo, partName: partName || '—', startedAt: todayKey(), startedAtMs: Date.now() };
+  const newRec = { section: rec.section || currentSection, parts: [...(rec.parts||[]), entry], updated: Date.now() };
+  try{
+    await persistRecord('machines', currentMachine, newRec);
+    document.getElementById('lm-partno').value = '';
+    document.getElementById('lm-partname').value = '';
+    showToast('Part added');
+  }catch(e){
+    console.error(e);
+    showToast('Add failed: ' + (e && e.message ? e.message : 'unknown error'));
+  }
+}
+
+async function removeRunningPart(partId){
+  const rec = machines[currentMachine];
+  if(!rec) return;
+  const removed = (rec.parts||[]).find(p => p.id === partId);
+  const newParts = (rec.parts||[]).filter(p => p.id !== partId);
+  try{
+    await persistRecord('machines', currentMachine, { section: rec.section || currentSection, parts:newParts, updated:Date.now() });
+    if(removed){
+      const startedAtMs = removed.startedAtMs || new Date(removed.startedAt).getTime() || Date.now();
+      await persistRecord('sessions', removed.id, {
+        machine: currentMachine,
+        partNo: removed.partNo,
+        partName: removed.partName || '—',
+        startedAt: removed.startedAt,
+        startedAtMs,
+        endedAtMs: Date.now(),
+        updated: Date.now()
+      });
+    }
+  }catch(e){
+    console.error(e);
+    showToast('Remove failed');
+  }
+}
+
+/* =========================================================================
+   NON-CONFORMANCE (NCR)
+   ========================================================================= */
+const DISPOSITIONS = ['Rework','Scrap','Use As Is','Return to Supplier'];
+
+function openNcrList(){ showScreen('screen-ncr-list'); renderNcrList(); }
+
+function renderNcrList(){
+  const listEl = document.getElementById('ncr-list');
+  const emptyEl = document.getElementById('ncr-list-empty');
+  if(!listEl) return;
+  const arr = Object.entries(ncrs).sort((a,b) => (b[1].updated||0) - (a[1].updated||0));
+  if(arr.length === 0){
+    listEl.innerHTML = '';
+    if(emptyEl) emptyEl.style.display = 'block';
+    return;
+  }
+  if(emptyEl) emptyEl.style.display = 'none';
+  listEl.innerHTML = arr.map(([id, n]) => {
+    const chip = n.status === 'Open' ? '<span class="chip chip-bad">OPEN</span>' : '<span class="chip chip-ok">CLOSED</span>';
+    return `<div class="ncr-row" onclick="openNcrDetail('${id}')">
+      <div><div class="ncr-row-id">${escapeHtml(n.ncrNo)} · ${escapeHtml(n.partNo)}</div><div class="ncr-row-sub">${n.date} · ${escapeHtml(n.section)} · ${escapeHtml(n.disposition)}</div></div>
+      ${chip}
+    </div>`;
+  }).join('');
+}
+
+function resetNcrForm(){
+  const sel = document.getElementById('ncr-section');
+  sel.innerHTML = SECTIONS.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('ncr-machine').value = '';
+  document.getElementById('ncr-partno').value = '';
+  document.getElementById('ncr-description').value = '';
+  document.getElementById('ncr-nominal').value = '';
+  document.getElementById('ncr-actual').value = '';
+  document.getElementById('ncr-tolerance').value = '';
+  document.getElementById('ncr-unit').value = 'mm';
+  document.getElementById('ncr-rootcause').value = '';
+  document.getElementById('ncr-containment').value = '';
+  document.getElementById('ncr-disposition').value = 'Rework';
+  document.getElementById('ncr-raisedby').value = getUserName() || '';
+  pendingNcrImage = null;
+  document.getElementById('ncr-form-gallery').innerHTML = '';
+  document.getElementById('ncr-image').value = '';
+}
+
+function openNcrForm(){
+  resetNcrForm();
+  showScreen('screen-ncr-form');
+}
+
+document.getElementById('ncr-image').addEventListener('change', async function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  try{
+    pendingNcrImage = await compressImage(file);
+    document.getElementById('ncr-form-gallery').innerHTML = `
+      <div class="form-gallery-thumb"><img src="${pendingNcrImage}"><button type="button" onclick="pendingNcrImage=null;document.getElementById('ncr-form-gallery').innerHTML='';">✕</button></div>`;
+  }catch(err){ console.error(err); }
+  e.target.value = '';
+});
+
+async function saveNcr(){
+  const partNo = document.getElementById('ncr-partno').value.trim();
+  const description = document.getElementById('ncr-description').value.trim();
+  if(!partNo || !description){ showToast('Enter part number and description'); return; }
+  const who = ensureUserName();
+  const id = 'ncr_' + Date.now();
+  const ncrNo = 'NCR-' + String(Date.now()).slice(-5);
+  const rec = {
+    ncrNo,
+    date: todayKey(),
+    section: document.getElementById('ncr-section').value,
+    machine: document.getElementById('ncr-machine').value.trim(),
+    partNo,
+    description,
+    dims: {
+      nominal: document.getElementById('ncr-nominal').value.trim(),
+      actual: document.getElementById('ncr-actual').value.trim(),
+      tolerance: document.getElementById('ncr-tolerance').value.trim(),
+      unit: document.getElementById('ncr-unit').value.trim() || 'mm',
+    },
+    rootCause: document.getElementById('ncr-rootcause').value.trim(),
+    containment: document.getElementById('ncr-containment').value.trim(),
+    disposition: document.getElementById('ncr-disposition').value,
+    status: 'Open',
+    raisedBy: document.getElementById('ncr-raisedby').value.trim() || who,
+    image: pendingNcrImage,
+    updated: Date.now(),
+  };
+  try{
+    await persistRecord('ncrs', id, rec);
+    showToast('Submitted ' + ncrNo);
+    showScreen('screen-ncr-list');
+  }catch(e){
+    console.error(e);
+    showToast('Save failed: ' + (e && e.message ? e.message : 'unknown error'));
+  }
+}
+
+function openNcrDetail(id){
+  currentNcr = id;
+  const n = ncrs[id];
+  if(!n){ showScreen('screen-ncr-list'); return; }
+
+  document.getElementById('ncr-detail-title').textContent = n.ncrNo;
+  document.getElementById('ncr-detail-id').textContent = n.ncrNo;
+  document.getElementById('ncr-detail-meta').textContent = n.date + (n.updated ? ' · updated ' + new Date(n.updated).toLocaleString() : '');
+
+  const gallery = document.getElementById('ncr-detail-gallery');
+  gallery.innerHTML = n.image ? `<div class="gallery-slide"><img src="${n.image}"></div>` : `<div class="gallery-slide">${placeholderSVG()}</div>`;
+
+  const pills = [];
+  pills.push(`<span class="info-pill">Section <b>${escapeHtml(n.section)}</b></span>`);
+  if(n.machine) pills.push(`<span class="info-pill">Machine <b>${escapeHtml(n.machine)}</b></span>`);
+  pills.push(`<span class="info-pill">Disposition <b>${escapeHtml(n.disposition)}</b></span>`);
+  pills.push(`<span class="info-pill">Raised by <b>${escapeHtml(n.raisedBy)}</b></span>`);
+  document.getElementById('ncr-detail-info').innerHTML = pills.join('');
+
+  document.getElementById('ncr-detail-desc').textContent = n.description || '';
+
+  const d = n.dims || {};
+  document.getElementById('ncr-detail-dims').innerHTML = `
+    <div class="spec-row"><span class="spec-key">Nominal</span><span class="spec-val">${escapeHtml(d.nominal||'—')} ${escapeHtml(d.unit||'')}</span></div>
+    <div class="spec-row"><span class="spec-key">Actual</span><span class="spec-val">${escapeHtml(d.actual||'—')} ${escapeHtml(d.unit||'')}</span></div>
+    <div class="spec-row"><span class="spec-key">Tolerance</span><span class="spec-val">${escapeHtml(d.tolerance||'—')}</span></div>`;
+
+  document.getElementById('ncr-detail-rootcause').textContent = n.rootCause || '—';
+  document.getElementById('ncr-detail-containment').textContent = n.containment || '—';
+
+  const closeBtn = document.getElementById('ncr-close-btn');
+  if(n.status === 'Open'){
+    closeBtn.style.display = 'block';
+    closeBtn.textContent = 'Close NCR';
+  } else {
+    closeBtn.style.display = 'none';
+  }
+
+  showScreen('screen-ncr-detail');
+}
+
+async function closeNcr(){
+  const n = ncrs[currentNcr];
+  if(!n) return;
+  try{
+    await persistRecord('ncrs', currentNcr, { ...n, status:'Closed', updated:Date.now() });
+    showToast('NCR closed');
+  }catch(e){
+    console.error(e);
+    showToast('Update failed');
+  }
+}
+
+/* =========================================================================
+   ANALYTICS
+   ========================================================================= */
+function allMachineCodes(){ return SECTIONS.reduce((a,s) => a.concat(s.machines), []); }
+
+function machinesInSection(id){
+  if(!id || id === 'all') return allMachineCodes();
+  const sec = SECTIONS.find(s => s.id === id);
+  return sec ? sec.machines.slice() : [];
+}
+function sectionAccentColor(id){
+  const varName = SECTION_ACCENT_VAR[id] || '--plum';
+  return getComputedStyle(document.body).getPropertyValue(varName).trim() || '#9C7CA8';
+}
+
+function openAnalytics(){ showScreen('screen-analytics'); renderAnalytics(); }
+
+function setAnalyticsPeriod(p){
+  analyticsPeriod = p;
+  renderAnalytics();
+}
+function setAnalyticsSection(id){
+  analyticsSection = id;
+  renderAnalytics();
+}
+function renderSectionTabs(){
+  const wrap = document.getElementById('analytics-section-tabs');
+  if(!wrap) return;
+  const items = [{ id:'all', name:'All sections' }, ...SECTIONS];
+  wrap.innerHTML = items.map(it => {
+    const active = analyticsSection === it.id;
+    const accent = it.id === 'all' ? 'var(--plum)' : `var(${SECTION_ACCENT_VAR[it.id]})`;
+    const dot = it.id === 'all' ? '' : `<span class="chip-dot" style="background:${accent};"></span>`;
+    return `<button class="section-chip ${active?'active':''}" style="--chip-accent:${accent};" onclick="setAnalyticsSection('${it.id}')">${dot}${escapeHtml(it.name)}</button>`;
+  }).join('');
+}
+
+function getPeriodRange(period){
+  const end = Date.now();
+  const day = 24*60*60*1000;
+  if(period === 'week') return { start: end - 7*day, end, bucket:'day' };
+  if(period === 'year') return { start: end - 365*day, end, bucket:'week' };
+  return { start: end - 30*day, end, bucket:'day' };
+}
+
+// Combines completed sessions with parts still running right now (open-ended, counted up to "now").
+function collectAllSessions(){
+  const now = Date.now();
+  const list = Object.values(sessions).map(s => ({
+    machine: s.machine, partNo: s.partNo,
+    startedAtMs: s.startedAtMs || (s.startedAt ? new Date(s.startedAt).getTime() : s.updated) || now,
+    endedAtMs: s.endedAtMs || s.updated || now,
+    running: false,
+  }));
+  Object.entries(machines).forEach(([code, rec]) => {
+    (rec.parts||[]).forEach(p => {
+      const startedAtMs = p.startedAtMs || (p.startedAt ? new Date(p.startedAt).getTime() : now);
+      list.push({ machine: code, partNo: p.partNo, startedAtMs, endedAtMs: now, running: true });
+    });
+  });
+  return list;
+}
+
+function buildBuckets(range){
+  const day = 24*60*60*1000;
+  const step = range.bucket === 'week' ? 7*day : day;
+  const buckets = [];
+  let t = Math.floor(range.start / step) * step;
+  while(t < range.end){
+    const bStart = t, bEnd = t + step;
+    const d = new Date(bStart);
+    buckets.push({ start:bStart, end:bEnd, label:(d.getMonth()+1) + '/' + d.getDate() });
+    t += step;
+  }
+  return buckets;
+}
+
+function computeAnalytics(){
+  const range = getPeriodRange(analyticsPeriod);
+  const scopeMachines = new Set(machinesInSection(analyticsSection));
+  const allSessions = collectAllSessions().filter(s => scopeMachines.has(s.machine));
+  const inRange = allSessions.filter(s => s.startedAtMs < range.end && s.endedAtMs > range.start);
+
+  const perMachine = {};
+  machinesInSection(analyticsSection).forEach(code => { perMachine[code] = { partsCount:0, uptimeMs:0 }; });
+  inRange.forEach(s => {
+    if(!perMachine[s.machine]) perMachine[s.machine] = { partsCount:0, uptimeMs:0 };
+    if(s.startedAtMs >= range.start) perMachine[s.machine].partsCount++;
+    const overlapStart = Math.max(s.startedAtMs, range.start);
+    const overlapEnd = Math.min(s.endedAtMs, range.end);
+    perMachine[s.machine].uptimeMs += Math.max(0, overlapEnd - overlapStart);
+  });
+
+  const trend = buildBuckets(range).map(b => {
+    const active = new Set();
+    allSessions.forEach(s => { if(s.startedAtMs < b.end && s.endedAtMs > b.start) active.add(s.machine); });
+    return { label:b.label, count:active.size };
+  });
+
+  const partTally = {};
+  inRange.forEach(s => {
+    if(s.startedAtMs < range.start) return; // count each run once, at its start
+    const key = s.partNo || '—';
+    partTally[key] = (partTally[key]||0) + 1;
+  });
+  const topParts = Object.entries(partTally).sort((a,b) => b[1]-a[1]).slice(0,8);
+
+  return { range, perMachine, trend, sessionCount:inRange.length, topParts };
+}
+
+function computeSectionOverview(){
+  const range = getPeriodRange(analyticsPeriod);
+  const allSessions = collectAllSessions();
+  return SECTIONS.map(sec => {
+    const set = new Set(sec.machines);
+    const inRange = allSessions.filter(s => set.has(s.machine) && s.startedAtMs < range.end && s.endedAtMs > range.start);
+    let partsCount = 0, uptimeMs = 0;
+    inRange.forEach(s => {
+      if(s.startedAtMs >= range.start) partsCount++;
+      const overlapStart = Math.max(s.startedAtMs, range.start);
+      const overlapEnd = Math.min(s.endedAtMs, range.end);
+      uptimeMs += Math.max(0, overlapEnd - overlapStart);
+    });
+    return { id:sec.id, name:sec.name, partsCount, uptimeMs, machineCount: sec.machines.length };
+  });
+}
+
+function analyticsChartColors(){
+  const light = document.body.classList.contains('theme-light');
+  return {
+    grid: light ? '#DDD5C4' : '#33393F',
+    tick: light ? '#6E675C' : '#8A9096',
+    parts: light ? '#B96A3D' : '#C97A4D',
+    uptime: light ? '#3D7791' : '#4C8CA8',
+    trend: light ? '#7A5C86' : '#9C7CA8',
+  };
+}
+
+function fmtHours(ms){ return (ms / 3600000).toFixed(1); }
+
+function renderSectionOverviewChart(){
+  const canvas = document.getElementById('analytics-section-chart');
+  if(!canvas || typeof Chart === 'undefined') return;
+  const rows = computeSectionOverview();
+  const colors = rows.map(r => sectionAccentColor(r.id));
+  const c = analyticsChartColors();
+  if(analyticsSectionChart) analyticsSectionChart.destroy();
+  analyticsSectionChart = new Chart(canvas.getContext('2d'), {
+    type:'bar',
+    data:{
+      labels: rows.map(r => r.name),
+      datasets:[{ label:'Parts run', data: rows.map(r => r.partsCount), backgroundColor: colors, borderRadius:5, maxBarThickness:38 }]
+    },
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{ display:false },
+        tooltip:{ callbacks:{ afterLabel:(ctx) => {
+          const r = rows[ctx.dataIndex];
+          return 'Uptime: ' + fmtHours(r.uptimeMs) + 'h · ' + r.machineCount + ' machines';
+        } } }
+      },
+      scales:{
+        x:{ ticks:{ color:c.tick, font:{size:10} }, grid:{ display:false } },
+        y:{ beginAtZero:true, ticks:{ color:c.tick, font:{size:10}, precision:0 }, grid:{ color:c.grid } }
+      },
+      onClick:(evt, elements) => { if(elements.length){ setAnalyticsSection(rows[elements[0].index].id); } }
+    }
+  });
+}
+
+function renderTopPartsChart(data){
+  const canvas = document.getElementById('analytics-parts-chart');
+  const label = document.getElementById('analytics-parts-label');
+  if(!canvas || typeof Chart === 'undefined') return;
+  if(!data.topParts || data.topParts.length === 0){
+    canvas.style.display = 'none';
+    if(label) label.style.display = 'none';
+    if(analyticsPartsChart){ analyticsPartsChart.destroy(); analyticsPartsChart = null; }
+    return;
+  }
+  canvas.style.display = 'block';
+  if(label) label.style.display = 'block';
+  const c = analyticsChartColors();
+  if(analyticsPartsChart) analyticsPartsChart.destroy();
+  analyticsPartsChart = new Chart(canvas.getContext('2d'), {
+    type:'bar',
+    data:{
+      labels: data.topParts.map(p => p[0]),
+      datasets:[{ label:'Runs', data: data.topParts.map(p => p[1]), backgroundColor:c.parts, borderRadius:4, maxBarThickness:22 }]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true,
+      plugins:{ legend:{ display:false } },
+      scales:{
+        x:{ beginAtZero:true, ticks:{ color:c.tick, font:{size:10}, precision:0 }, grid:{ color:c.grid } },
+        y:{ ticks:{ color:c.tick, font:{size:10} }, grid:{ display:false } }
+      }
+    }
+  });
+}
+
+function renderAnalytics(){
+  if(!document.getElementById('screen-analytics') || typeof Chart === 'undefined') return;
+  document.querySelectorAll('#analytics-period-toggle .period-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.period === analyticsPeriod);
+  });
+  renderSectionTabs();
+  renderSectionOverviewChart();
+
+  const sectionName = analyticsSection === 'all' ? '' : ' — ' + (SECTIONS.find(s => s.id === analyticsSection) || {}).name;
+  const trendLabel = document.getElementById('analytics-trend-label');
+  const machineLabel = document.getElementById('analytics-machine-label');
+  if(trendLabel) trendLabel.textContent = 'Machines running per day' + sectionName;
+  if(machineLabel) machineLabel.textContent = 'Parts run & uptime by machine' + sectionName;
+
+  const data = computeAnalytics();
+  window._analyticsData = data;
+
+  const totalParts = Object.values(data.perMachine).reduce((a,m) => a+m.partsCount, 0);
+  const totalUptimeH = Object.values(data.perMachine).reduce((a,m) => a+m.uptimeMs, 0) / 3600000;
+  const activeCount = Object.values(data.perMachine).filter(m => m.partsCount>0 || m.uptimeMs>0).length;
+  document.getElementById('analytics-summary').innerHTML = `
+    <span class="info-pill">Parts run <b>${totalParts}</b></span>
+    <span class="info-pill">Uptime <b>${totalUptimeH.toFixed(1)}h</b></span>
+    <span class="info-pill">Active machines <b>${activeCount}</b></span>`;
+
+  const c = analyticsChartColors();
+  const emptyEl = document.getElementById('analytics-empty');
+  const trendCanvas = document.getElementById('analytics-trend-chart');
+  const machineCanvas = document.getElementById('analytics-machine-chart');
+
+  if(data.sessionCount === 0 && totalUptimeH === 0){
+    if(emptyEl) emptyEl.style.display = 'block';
+    trendCanvas.style.display = 'none'; machineCanvas.style.display = 'none';
+    if(trendLabel) trendLabel.style.display = 'none';
+    if(machineLabel) machineLabel.style.display = 'none';
+    if(analyticsTrendChart){ analyticsTrendChart.destroy(); analyticsTrendChart = null; }
+    if(analyticsMachineChart){ analyticsMachineChart.destroy(); analyticsMachineChart = null; }
+    renderTopPartsChart(data);
+    return;
+  }
+  if(emptyEl) emptyEl.style.display = 'none';
+  trendCanvas.style.display = 'block'; machineCanvas.style.display = 'block';
+  if(trendLabel) trendLabel.style.display = 'block';
+  if(machineLabel) machineLabel.style.display = 'block';
+
+  if(analyticsTrendChart) analyticsTrendChart.destroy();
+  analyticsTrendChart = new Chart(trendCanvas.getContext('2d'), {
+    type:'line',
+    data:{
+      labels: data.trend.map(t => t.label),
+      datasets:[{ label:'Machines running', data:data.trend.map(t => t.count), borderColor:c.trend, backgroundColor:c.trend, tension:.3, pointRadius:2, borderWidth:2.5, fill:false }]
+    },
+    options:{
+      responsive:true,
+      plugins:{ legend:{ display:false } },
+      scales:{
+        x:{ ticks:{ color:c.tick, font:{size:9}, maxRotation:0, autoSkip:true, maxTicksLimit:10 }, grid:{ display:false } },
+        y:{ beginAtZero:true, ticks:{ color:c.tick, font:{size:10}, precision:0 }, grid:{ color:c.grid } }
+      }
+    }
+  });
+
+  const machineRows = Object.entries(data.perMachine)
+    .filter(([,v]) => v.partsCount > 0 || v.uptimeMs > 0)
+    .sort((a,b) => b[1].uptimeMs - a[1].uptimeMs)
+    .slice(0, 12);
+
+  if(analyticsMachineChart) analyticsMachineChart.destroy();
+  analyticsMachineChart = new Chart(machineCanvas.getContext('2d'), {
+    data:{
+      labels: machineRows.map(r => r[0]),
+      datasets:[
+        { type:'bar', label:'Parts run', data:machineRows.map(r => r[1].partsCount), backgroundColor:c.parts, borderRadius:3, yAxisID:'parts' },
+        { type:'bar', label:'Uptime (h)', data:machineRows.map(r => Number(fmtHours(r[1].uptimeMs))), backgroundColor:c.uptime, borderRadius:3, yAxisID:'uptime' }
+      ]
+    },
+    options:{
+      responsive:true,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{ legend:{ labels:{ color:c.tick, font:{size:11} } } },
+      scales:{
+        x:{ ticks:{ color:c.tick, font:{size:10} }, grid:{ display:false } },
+        parts:{ position:'left', beginAtZero:true, ticks:{ color:c.tick, font:{size:10}, precision:0 }, grid:{ color:c.grid } },
+        uptime:{ position:'right', beginAtZero:true, ticks:{ color:c.tick, font:{size:10} }, grid:{ display:false } }
+      }
+    }
+  });
+
+  renderTopPartsChart(data);
+}
+
+function analyticsRowsForExport(){
+  const data = window._analyticsData || computeAnalytics();
+  return Object.entries(data.perMachine)
+    .filter(([,v]) => v.partsCount > 0 || v.uptimeMs > 0)
+    .sort((a,b) => b[1].uptimeMs - a[1].uptimeMs)
+    .map(([machine, v]) => ({ machine, partsRun:v.partsCount, uptimeHours:Number(fmtHours(v.uptimeMs)) }));
+}
+
+function exportAnalyticsExcel(){
+  if(typeof XLSX === 'undefined'){ showToast('Excel library failed to load'); return; }
+  const rows = analyticsRowsForExport();
+  if(rows.length === 0){ showToast('Nothing to export yet'); return; }
+  const data = window._analyticsData;
+  const ws = XLSX.utils.json_to_sheet(rows.map(r => ({ Machine:r.machine, 'Parts run':r.partsRun, 'Uptime (hours)':r.uptimeHours })));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Machine activity');
+  const ws2 = XLSX.utils.json_to_sheet((data.trend||[]).map(t => ({ Date:t.label, 'Machines running':t.count })));
+  XLSX.utils.book_append_sheet(wb, ws2, 'Daily trend');
+  if(data.topParts && data.topParts.length){
+    const ws3 = XLSX.utils.json_to_sheet(data.topParts.map(p => ({ 'Part number':p[0], Runs:p[1] })));
+    XLSX.utils.book_append_sheet(wb, ws3, 'Top parts');
+  }
+  const overview = computeSectionOverview();
+  const ws4 = XLSX.utils.json_to_sheet(overview.map(s => ({ Section:s.name, 'Parts run':s.partsCount, 'Uptime (hours)':Number(fmtHours(s.uptimeMs)), Machines:s.machineCount })));
+  XLSX.utils.book_append_sheet(wb, ws4, 'Section overview');
+  const suffix = analyticsSection === 'all' ? 'all-sections' : analyticsSection;
+  XLSX.writeFile(wb, 'analytics-' + suffix + '-' + analyticsPeriod + '-' + Date.now() + '.xlsx');
+}
+
+function exportAnalyticsPDF(){
+  if(typeof window.jspdf === 'undefined'){ showToast('PDF library failed to load'); return; }
+  const rows = analyticsRowsForExport();
+  if(rows.length === 0){ showToast('Nothing to export yet'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'pt' });
+  const periodLabel = { week:'Last 7 days', month:'Last 30 days', year:'Last 12 months' }[analyticsPeriod];
+  const sectionLabel = analyticsSection === 'all' ? 'All sections' : (SECTIONS.find(s => s.id === analyticsSection) || {}).name;
+
+  doc.setFontSize(16);
+  doc.text('Machine analytics', 40, 40);
+  doc.setFontSize(10);
+  doc.setTextColor(110);
+  doc.text(sectionLabel + ' \u00b7 ' + periodLabel + ' \u00b7 generated ' + new Date().toLocaleString(), 40, 58);
+
+  let y = 80;
+  const trendCanvas = document.getElementById('analytics-trend-chart');
+  const machineCanvas = document.getElementById('analytics-machine-chart');
+  try{
+    if(trendCanvas && trendCanvas.style.display !== 'none'){
+      doc.setFontSize(11); doc.setTextColor(30);
+      doc.text('Machines running per day', 40, y);
+      y += 10;
+      doc.addImage(trendCanvas.toDataURL('image/png', 1.0), 'PNG', 40, y, 515, 160);
+      y += 175;
+    }
+    if(machineCanvas && machineCanvas.style.display !== 'none'){
+      doc.setFontSize(11); doc.setTextColor(30);
+      doc.text('Parts run & uptime by machine', 40, y);
+      y += 10;
+      doc.addImage(machineCanvas.toDataURL('image/png', 1.0), 'PNG', 40, y, 515, 220);
+      y += 235;
+    }
+  }catch(e){ console.error('Chart image export failed', e); }
+
+  doc.autoTable({
+    startY: y,
+    head: [['Machine', 'Parts run', 'Uptime (hours)']],
+    body: rows.map(r => [r.machine, r.partsRun, r.uptimeHours]),
+    styles: { fontSize:9 },
+    headStyles: { fillColor:[40,44,48] },
+  });
+
+  const data = window._analyticsData;
+  if(data && data.topParts && data.topParts.length){
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 20,
+      head: [['Top parts', 'Runs']],
+      body: data.topParts.map(p => [p[0], p[1]]),
+      styles: { fontSize:9 },
+      headStyles: { fillColor:[40,44,48] },
+    });
+  }
+
+  doc.save('analytics-' + (analyticsSection === 'all' ? 'all-sections' : analyticsSection) + '-' + analyticsPeriod + '-' + Date.now() + '.pdf');
+}
+
+/* ---------------- Part number search (across all machines, all time) ---------------- */
+function searchPart(){
+  const q = (document.getElementById('part-search-input').value || '').trim();
+  const resultsEl = document.getElementById('part-search-results');
+  if(!q){
+    resultsEl.innerHTML = '';
+    if(partSearchChart){ partSearchChart.destroy(); partSearchChart = null; }
+    return;
+  }
+  const matches = collectAllSessions().filter(s => (s.partNo||'').toLowerCase().includes(q.toLowerCase()));
+  if(matches.length === 0){
+    resultsEl.innerHTML = `<div class="spec-empty">No runs found for "${escapeHtml(q)}".</div>`;
+    if(partSearchChart){ partSearchChart.destroy(); partSearchChart = null; }
+    return;
+  }
+  const now = Date.now();
+  const byMachine = {};
+  let totalUptimeMs = 0;
+  matches.forEach(s => {
+    byMachine[s.machine] = (byMachine[s.machine]||0) + 1;
+    totalUptimeMs += Math.max(0, (s.endedAtMs||now) - s.startedAtMs);
+  });
+  const machineRows = Object.entries(byMachine).sort((a,b) => b[1]-a[1]);
+  const runsSorted = matches.slice().sort((a,b) => b.startedAtMs - a.startedAtMs).slice(0, 25);
+
+  resultsEl.innerHTML = `
+    <div class="info-strip" style="padding:8px 0 12px 0;">
+      <span class="info-pill">Total runs <b>${matches.length}</b></span>
+      <span class="info-pill">Machines used <b>${machineRows.length}</b></span>
+      <span class="info-pill">Total uptime <b>${fmtHours(totalUptimeMs)}h</b></span>
+    </div>
+    <div class="chart-card"><canvas id="part-search-chart" height="${Math.max(120, machineRows.length*28)}"></canvas></div>
+    <div id="part-search-runs"></div>`;
+
+  document.getElementById('part-search-runs').innerHTML = runsSorted.map(s => {
+    const chip = s.running
+      ? '<span class="chip chip-ok">RUNNING</span>'
+      : '<span class="chip chip-neutral">DONE</span>';
+    const dur = fmtHours(Math.max(0, (s.endedAtMs||now) - s.startedAtMs)) + 'h';
+    return `<div class="run-row">
+      <div><div class="run-row-main">${escapeHtml(s.machine)}</div><div class="run-row-sub">${new Date(s.startedAtMs).toLocaleString()} · ${dur}</div></div>
+      ${chip}
+    </div>`;
+  }).join('');
+
+  const c = analyticsChartColors();
+  if(partSearchChart) partSearchChart.destroy();
+  partSearchChart = new Chart(document.getElementById('part-search-chart').getContext('2d'), {
+    type:'bar',
+    data:{ labels: machineRows.map(r => r[0]), datasets:[{ label:'Runs', data: machineRows.map(r => r[1]), backgroundColor:c.parts, borderRadius:4, maxBarThickness:22 }] },
+    options:{
+      indexAxis:'y',
+      responsive:true,
+      plugins:{ legend:{ display:false } },
+      scales:{
+        x:{ beginAtZero:true, ticks:{ color:c.tick, font:{size:10}, precision:0 }, grid:{ color:c.grid } },
+        y:{ ticks:{ color:c.tick, font:{size:10} }, grid:{ display:false } }
+      }
+    }
+  });
+}
 
 /* ---------------- Boot ---------------- */
 document.getElementById('whoami-name').textContent = getUserName() || 'Unknown';
