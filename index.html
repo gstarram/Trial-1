@@ -440,6 +440,68 @@
   .piling-tile.is-running .piling-tile-sub{color:var(--ok);}
   .fam-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--muted);}
 
+  .grinding-layout-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;align-items:start;}
+  .grinding-col{display:flex;flex-direction:column;gap:8px;}
+  .grinding-tile{
+    background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--col-accent, var(--line));
+    border-radius:10px;padding:9px 7px;cursor:pointer;
+    transition:border-color .15s, transform .1s, box-shadow .2s;
+  }
+  .grinding-tile:active{transform:scale(.96);}
+  .grinding-tile-top{display:flex;align-items:center;gap:6px;}
+  .grinding-tile-name{
+    font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .grinding-tile-sub{
+    font-size:9px;color:var(--muted);margin-top:5px;text-transform:uppercase;letter-spacing:.03em;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .grind-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--col-accent, var(--muted));}
+  .grinding-tile.is-running{border-color:var(--ok);animation:grind-pulse 2.2s ease-in-out infinite;}
+  .grinding-tile.is-running .grinding-tile-sub{color:var(--ok);font-weight:600;}
+  .grinding-tile.is-running .grind-dot{background:var(--ok);animation:grind-blink 1.4s ease-in-out infinite;}
+  @keyframes grind-pulse{
+    0%,100%{ box-shadow:0 0 0 0 rgba(143,166,107,.35); }
+    50%{ box-shadow:0 0 0 5px rgba(143,166,107,0); }
+  }
+  @keyframes grind-blink{
+    0%,100%{ opacity:1; }
+    50%{ opacity:.3; }
+  }
+
+  .welding-layout-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;align-items:start;}
+  .welding-col{display:flex;flex-direction:column;gap:8px;}
+  .welding-tile{
+    background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--col-accent, var(--line));
+    border-radius:10px;padding:10px 8px;cursor:pointer;
+    transition:border-color .15s, transform .1s, box-shadow .2s;
+  }
+  .welding-tile:active{transform:scale(.96);}
+  .welding-tile-top{display:flex;align-items:center;gap:6px;}
+  .welding-tile-name{
+    font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .welding-tile-sub{
+    font-size:9.5px;color:var(--muted);margin-top:5px;text-transform:uppercase;letter-spacing:.03em;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .weld-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--col-accent, var(--muted));}
+  .welding-tile.is-running{border-color:var(--warn);animation:weld-spark 1.8s ease-in-out infinite;}
+  .welding-tile.is-running .welding-tile-sub{color:var(--warn);font-weight:600;}
+  .welding-tile.is-running .weld-dot{background:var(--warn);animation:weld-flicker 1s ease-in-out infinite;}
+  @keyframes weld-spark{
+    0%,100%{ box-shadow:0 0 0 0 rgba(217,164,65,.35); }
+    50%{ box-shadow:0 0 0 6px rgba(217,164,65,0); }
+  }
+  @keyframes weld-flicker{
+    0%,100%{ opacity:1; }
+    30%{ opacity:.4; }
+    60%{ opacity:.9; }
+    80%{ opacity:.5; }
+  }
+
   .period-toggle{display:flex;gap:8px;margin-bottom:14px;}
   .period-btn{
     flex:1;background:var(--panel);border:1px solid var(--line);color:var(--muted);
@@ -829,7 +891,7 @@
         <label>Section</label>
         <select id="ncr-section"></select>
       </div>
-      <div class="field"><label>Machine</label><input type="text" id="ncr-machine" placeholder="e.g. GRD-02"></div>
+      <div class="field"><label>Machine</label><input type="text" id="ncr-machine" placeholder="e.g. G32"></div>
     </div>
     <div class="field"><label>Part number</label><input type="text" id="ncr-partno" placeholder="e.g. PN-2290"></div>
     <div class="field"><label>Description</label><textarea id="ncr-description" placeholder="Describe the non-conformance…"></textarea></div>
@@ -1013,8 +1075,13 @@ let unsubMachines = null, unsubScrap = null, unsubNcrs = null, unsubSessions = n
 const SECTIONS = [
   { id:'piling',   name:'Piling',   machines:['K15-3','K15-2','K15-1','K50-5','K50-4','K50-1','K50-2','K50-3',
                                                 'RP-1','A-2','RP-2','X20-3','A-13','A-6','X20-2','A-14','A-8','X20-1','A-18','A-10'] },
-  { id:'grinding', name:'Grinding', machines:['GRD-01','GRD-02','GRD-03'] },
-  { id:'welding',  name:'Welding',  machines:['WLD-01','WLD-02','WLD-03','WLD-04'] },
+  { id:'grinding', name:'Grinding', machines:['G44','G43','G38','G33','G28','G02',
+                                                'G37','G29','MG1','G40','MG2','RT4','W18',
+                                                'G15','G32','G42','LT2','G31','G30',
+                                                'TWG1','TWG2','G34','G25','GW2','G23-36'] },
+  { id:'welding',  name:'Welding',  machines:['W-34','W-2','W-15','W-14','W-10','W-4',
+                                                'W-5','W-31','W-30','W-16','W-28','W-29',
+                                                'W-38','W-8','W-26','W-13','W-6','W-12'] },
   { id:'baking',   name:'Baking',   machines:['BAK-01','BAK-02'] },
   { id:'cds',      name:'CDS',      machines:['CDS-01','CDS-02','CDS-03'] },
   { id:'fhp',      name:'FHP',      machines:['FHP-01','FHP-02'] },
@@ -1037,6 +1104,21 @@ const PILING_BLOCK2 = [
   { code:'X20-1', col:3, row:4 },
   { code:'A-18',  col:1, row:5 },
   { code:'A-10',  col:2, row:5 },
+];
+
+// Grinding's physical floor layout, grouped into 4 columns as on the shop-floor chart.
+const GRINDING_COLUMNS = [
+  { label:'Line A', accent:'--copper', machines:['G44','G43','G38','G33','G28','G02'] },
+  { label:'Line B', accent:'--steel',  machines:['G37','G29','MG1','G40','MG2','RT4','W18'] },
+  { label:'Line C', accent:'--moss',   machines:['G15','G32','G42','LT2','G31','G30'] },
+  { label:'Line D', accent:'--plum',   machines:['TWG1','TWG2','G34','G25','GW2','G23-36'] },
+];
+
+// Welding's physical floor layout, grouped into 3 columns per the shop-floor sketch.
+const WELDING_COLUMNS = [
+  { label:'Column 1', accent:'--plum',   machines:['W-34','W-2','W-15','W-14','W-10','W-4'] },
+  { label:'Column 2', accent:'--sand',   machines:['W-5','W-31','W-30','W-16','W-28','W-29'] },
+  { label:'Column 3', accent:'--danger', machines:['W-38','W-8','W-26','W-13','W-6','W-12'] },
 ];
 
 const WHOAMI_KEY = 'brushspec_username';
@@ -1907,12 +1989,13 @@ function renderLayoutMachines(){
     }
 
     const tileHtml = (m) => {
-      const count = machines[m] ? (machines[m].parts||[]).length : 0;
-      const running = count > 0;
+      const partsList = machines[m] ? (machines[m].parts||[]) : [];
+      const running = partsList.length > 0;
+      const partLabel = running ? partsList.map(p => p.partNo).join(', ') : 'idle';
       const fam = (m.match(/^[A-Za-z]+/) || ['?'])[0].toLowerCase();
       return `<div class="piling-tile fam-${fam} ${running ? 'is-running' : ''}" onclick="openMachine('${m}')">
         <div class="piling-tile-top"><span class="fam-dot"></span><span class="piling-tile-name">${m}</span></div>
-        <div class="piling-tile-sub">${running ? count + ' part' + (count===1?'':'s') : 'idle'}</div>
+        <div class="piling-tile-sub">${escapeHtml(partLabel)}</div>
       </div>`;
     };
 
@@ -1930,13 +2013,69 @@ function renderLayoutMachines(){
     return;
   }
 
+  if(currentSection === 'grinding'){
+    if(legend){
+      legend.style.display = 'flex';
+      legend.innerHTML = GRINDING_COLUMNS.map(col =>
+        `<span class="legend-item"><span class="dot" style="background:var(${col.accent});"></span>${col.label}</span>`
+      ).join('');
+    }
+
+    const tileHtml = (m) => {
+      const partsList = machines[m] ? (machines[m].parts||[]) : [];
+      const running = partsList.length > 0;
+      const partLabel = running ? partsList.map(p => p.partNo).join(', ') : 'idle';
+      return `<div class="grinding-tile ${running ? 'is-running' : ''}" onclick="openMachine('${m}')">
+        <div class="grinding-tile-top"><span class="grind-dot"></span><span class="grinding-tile-name">${m}</span></div>
+        <div class="grinding-tile-sub">${escapeHtml(partLabel)}</div>
+      </div>`;
+    };
+
+    const colsHtml = GRINDING_COLUMNS.map(col =>
+      `<div class="grinding-col" style="--col-accent:var(${col.accent});">${col.machines.map(tileHtml).join('')}</div>`
+    ).join('');
+
+    list.className = '';
+    list.innerHTML = `<div class="grinding-layout-grid">${colsHtml}</div>`;
+    return;
+  }
+
+  if(currentSection === 'welding'){
+    if(legend){
+      legend.style.display = 'flex';
+      legend.innerHTML = WELDING_COLUMNS.map(col =>
+        `<span class="legend-item"><span class="dot" style="background:var(${col.accent});"></span>${col.label}</span>`
+      ).join('');
+    }
+
+    const tileHtml = (m) => {
+      const partsList = machines[m] ? (machines[m].parts||[]) : [];
+      const running = partsList.length > 0;
+      const partLabel = running ? partsList.map(p => p.partNo).join(', ') : 'idle';
+      return `<div class="welding-tile ${running ? 'is-running' : ''}" onclick="openMachine('${m}')">
+        <div class="welding-tile-top"><span class="weld-dot"></span><span class="welding-tile-name">${m}</span></div>
+        <div class="welding-tile-sub">${escapeHtml(partLabel)}</div>
+      </div>`;
+    };
+
+    const colsHtml = WELDING_COLUMNS.map(col =>
+      `<div class="welding-col" style="--col-accent:var(${col.accent});">${col.machines.map(tileHtml).join('')}</div>`
+    ).join('');
+
+    list.className = '';
+    list.innerHTML = `<div class="welding-layout-grid">${colsHtml}</div>`;
+    return;
+  }
+
   if(legend) legend.style.display = 'none';
   list.className = 'machine-list';
   list.innerHTML = s.machines.map(m => {
-    const count = machines[m] ? (machines[m].parts||[]).length : 0;
-    const chip = count > 0 ? '<span class="chip chip-ok">RUNNING</span>' : '<span class="chip" style="background:var(--panel-2);color:var(--muted);">IDLE</span>';
+    const partsList = machines[m] ? (machines[m].parts||[]) : [];
+    const running = partsList.length > 0;
+    const partLabel = running ? partsList.map(p => p.partNo).join(', ') : 'idle';
+    const chip = running ? '<span class="chip chip-ok">RUNNING</span>' : '<span class="chip" style="background:var(--panel-2);color:var(--muted);">IDLE</span>';
     return `<div class="machine-row" onclick="openMachine('${m}')">
-      <div><div class="machine-row-name">${m}</div><div class="machine-row-sub">${count} part${count===1?'':'s'} logged</div></div>
+      <div><div class="machine-row-name">${m}</div><div class="machine-row-sub">${escapeHtml(partLabel)}</div></div>
       ${chip}
     </div>`;
   }).join('');
