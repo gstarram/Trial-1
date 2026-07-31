@@ -335,8 +335,25 @@
   }
   .theme-toggle{
     width:26px;height:26px;border-radius:50%;border:1px solid #33393F;background:#1E2226;
-    display:flex;align-items:center;justify-content:center;cursor:pointer;color:#C97A4D;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--copper);
     font-size:13px;line-height:1;padding:0;flex-shrink:0;
+  }
+
+  .theme-picker{margin-top:22px;}
+  .theme-picker-label{
+    font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:13px;
+    color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;
+  }
+  .theme-swatch-row{display:flex;gap:12px;flex-wrap:wrap;}
+  .theme-swatch{
+    width:38px;height:38px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;
+    position:relative;transition:transform .12s ease, border-color .12s ease;flex-shrink:0;
+  }
+  .theme-swatch:active{transform:scale(.88);}
+  .theme-swatch.selected{border-color:var(--ink);}
+  .theme-swatch.selected::after{
+    content:"✓";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:15px;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.6);
   }
 
   /* ---- Hub ---- */
@@ -399,6 +416,28 @@
   .chart-card canvas{max-width:100%;}
 
   /* ---- Section / machine grids (Layout module) ---- */
+  .qe-entry-btn{
+    background:transparent;border:1px solid var(--copper);color:var(--copper);border-radius:8px;
+    height:36px;padding:0 12px;display:flex;align-items:center;gap:6px;flex-shrink:0;
+    font-family:'Inter',sans-serif;font-weight:600;font-size:12.5px;cursor:pointer;
+  }
+  .qe-entry-btn:active{transform:scale(.96);}
+  .qe-machine-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px;}
+  .qe-machine-btn{
+    position:relative;background:var(--panel);border:1.5px solid var(--line);border-radius:10px;
+    padding:16px 8px;text-align:center;cursor:pointer;font-family:'IBM Plex Mono',monospace;
+    font-weight:600;font-size:13px;color:var(--ink);transition:border-color .12s, background .12s, transform .1s;
+  }
+  .qe-machine-btn:active{transform:scale(.95);}
+  .qe-machine-btn.selected{border-color:var(--copper);background:rgba(201,122,77,.14);}
+  .qe-dot{position:absolute;top:7px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--ok);}
+  .qe-tags{display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px 0 16px;}
+  .qe-tag-chip{
+    background:var(--panel-2);border:1px solid var(--line);border-radius:20px;
+    padding:9px 15px;font-size:13px;color:var(--ink);cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  .qe-tag-chip:active{transform:scale(.95);border-color:var(--copper);}
+
   .section-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .section-tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 14px;cursor:pointer;}
   .section-tile:active{transform:scale(.98);}
@@ -501,6 +540,13 @@
     60%{ opacity:.9; }
     80%{ opacity:.5; }
   }
+  .welding-block-label{
+    font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:13px;
+    color:var(--muted);text-transform:uppercase;letter-spacing:.06em;
+    margin:22px 0 8px 0;
+  }
+  .welding-sub-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .welding-green-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;grid-auto-rows:auto;}
 
   .period-toggle{display:flex;gap:8px;margin-bottom:14px;}
   .period-btn{
@@ -548,6 +594,14 @@
   .part-row{
     display:flex;align-items:center;justify-content:space-between;background:var(--panel-2);
     border-radius:8px;padding:10px 12px;margin-bottom:8px;
+    animation:row-fade-in .25s ease;
+    transition:opacity .2s ease, transform .2s ease, max-height .2s ease, margin .2s ease, padding .2s ease;
+    max-height:60px;overflow:hidden;
+  }
+  .part-row.part-row-exit{opacity:0;transform:translateX(10px);max-height:0;margin-bottom:0;padding-top:0;padding-bottom:0;}
+  @keyframes row-fade-in{
+    0%{ opacity:0; transform:translateY(-4px); }
+    100%{ opacity:1; transform:translateY(0); }
   }
   .part-row-name{font-size:13.5px;font-weight:500;}
   .part-row-sub{font-size:11px;color:var(--muted);margin-top:2px;}
@@ -632,6 +686,11 @@
         </div>
       </div>
       <div class="whoami" style="margin-top:18px;">Logging edits as <b id="whoami-name">—</b> · <button onclick="promptUserName()">change</button> · <span id="auth-account"></span> <button class="signout-btn" onclick="signOutUser()">sign out</button></div>
+
+      <div class="theme-picker">
+        <div class="theme-picker-label">Accent theme</div>
+        <div class="theme-swatch-row" id="theme-swatch-row"></div>
+      </div>
     </main>
   </div>
 
@@ -827,6 +886,10 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
       <div class="topbar-title" id="layout-machines-title">Section</div>
+      <button class="qe-entry-btn" onclick="openQuickEntry()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M13 2L3 14h7l-1 8 11-14h-7l1-6z"/></svg>
+        Quick Entry
+      </button>
     </div>
     <main style="padding-top:16px;">
       <div class="piling-legend" id="layout-machine-legend" style="display:none;"></div>
@@ -843,7 +906,10 @@
       <div class="topbar-title" id="layout-machine-title">Machine</div>
     </div>
     <main style="padding-top:16px;">
-      <div class="section-label" style="padding:0 0 8px 0;">Parts currently running</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0 0 8px 0;">
+        <div class="section-label" style="padding:0;">Parts currently running</div>
+        <button class="btn-danger" id="clear-all-parts-btn" style="display:none;padding:5px 10px;font-size:11.5px;" onclick="clearAllRunningParts()">Clear all</button>
+      </div>
       <div id="machine-parts-list"></div>
       <div class="spec-empty" id="machine-parts-empty" style="display:none;">No part logged on this machine.</div>
 
@@ -854,6 +920,30 @@
         <div class="field" style="padding:0 0 8px 0;"><label>Part No.</label><input type="text" id="lm-partno" placeholder="e.g. PN-3381"></div>
         <div class="field" style="padding:0 0 12px 0;"><label>Part name</label><input type="text" id="lm-partname" placeholder="e.g. Bearing Race"></div>
         <button class="btn-primary" onclick="addRunningPart()">+ Add part</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============ QUICK ENTRY ============ -->
+  <div class="screen" id="screen-quick-entry">
+    <div class="topbar">
+      <button class="back-btn" onclick="showScreen('screen-layout-machines')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="topbar-title" id="qe-title">Quick Entry</div>
+    </div>
+    <main style="padding-top:16px;">
+      <div class="qe-machine-grid" id="qe-machine-grid"></div>
+
+      <div id="qe-reading-section" style="display:none;">
+        <div class="field" style="padding-top:18px;">
+          <label>Reading / notes — <span id="qe-selected-label" style="color:var(--copper);"></span></label>
+          <input type="text" id="qe-reading" placeholder="e.g. 12.4mm, y, completed...">
+        </div>
+        <div class="qe-tags" id="qe-tag-chips"></div>
+        <div style="padding:20px 16px 24px 16px;">
+          <button class="btn-primary" onclick="saveQuickReading()">Save reading — next machine</button>
+        </div>
       </div>
     </main>
   </div>
@@ -1063,13 +1153,14 @@ let ncrs = {};               // ncrId -> record
 let sessions = {};           // sessionId -> completed run record {machine, partNo, startedAtMs, endedAtMs}
 let currentSection = null;
 let currentMachine = null;
+let qeSelectedMachine = null;
 let currentNcr = null;
 let pendingNcrImage = null;
 let scrapChartInstance = null;
 let analyticsTrendChart = null, analyticsMachineChart = null, analyticsSectionChart = null, analyticsPartsChart = null, partSearchChart = null;
 let analyticsPeriod = 'month'; // 'week' | 'month' | 'year'
 let analyticsSection = 'all';  // 'all' | one of SECTIONS[].id
-const SECTION_ACCENT_VAR = { piling:'--copper', grinding:'--steel', welding:'--plum', baking:'--warn', cds:'--moss', fhp:'--danger' };
+const SECTION_ACCENT_VAR = { piling:'--copper', grinding:'--steel', welding:'--plum', baking:'--warn', fhp:'--danger' };
 let unsubMachines = null, unsubScrap = null, unsubNcrs = null, unsubSessions = null;
 
 const SECTIONS = [
@@ -1081,9 +1172,9 @@ const SECTIONS = [
                                                 'TWG1','TWG2','G34','G25','GW2','G23-36'] },
   { id:'welding',  name:'Welding',  machines:['W-34','W-2','W-15','W-14','W-10','W-4',
                                                 'W-5','W-31','W-30','W-16','W-28','W-29',
-                                                'W-38','W-8','W-26','W-13','W-6','W-12'] },
+                                                'W-38','W-8','W-26','W-13','W-6','W-12',
+                                                'W-19','W-17','W-32','Jw-01','W-25','W-27','W-03','W-22'] },
   { id:'baking',   name:'Baking',   machines:['BAK-01','BAK-02'] },
-  { id:'cds',      name:'CDS',      machines:['CDS-01','CDS-02','CDS-03'] },
   { id:'fhp',      name:'FHP',      machines:['FHP-01','FHP-02'] },
 ];
 
@@ -1121,8 +1212,35 @@ const WELDING_COLUMNS = [
   { label:'Column 3', accent:'--danger', machines:['W-38','W-8','W-26','W-13','W-6','W-12'] },
 ];
 
+// "Under CDS" — a sub-group inside Welding (CDS moved here from its own top-level section), single row.
+const WELDING_CDS_GROUP = ['W-19','W-17','W-32'];
+
+// "under green welding" — a sub-group inside Welding with an irregular floor layout (2 cols x 3 rows, 1-indexed).
+const WELDING_GREEN_GROUP = [
+  { code:'Jw-01', col:2, row:1 },
+  { code:'W-25',  col:1, row:2 },
+  { code:'W-27',  col:2, row:2 },
+  { code:'W-03',  col:1, row:3 },
+  { code:'W-22',  col:2, row:3 },
+];
+
+// Quick Entry chips — edit this list to change the tappable shortcuts. Hardcoded for now, by design.
+const QUICK_TAGS = ['y', 'completed', 'want of mix'];
+
 const WHOAMI_KEY = 'brushspec_username';
 const THEME_KEY = 'brushspec_theme';
+const ACCENT_KEY = 'brushspec_accent';
+
+// Predefined accent palettes for the Theme picker. Only the accent (--copper/--copper-dim) changes —
+// background/panel/ink stay as-is so every palette still matches the existing dark/light backdrop.
+const ACCENT_THEMES = [
+  { id:'copper',  name:'Copper',       accent:'#C97A4D', accentDim:'#8F5836' },
+  { id:'cyan',    name:'Cyan Pulse',   accent:'#22E1F5', accentDim:'#158FA0' },
+  { id:'violet',  name:'Violet Surge', accent:'#B26BFA', accentDim:'#7C3FC4' },
+  { id:'emerald', name:'Emerald Grid', accent:'#2BE39A', accentDim:'#1B9C6B' },
+  { id:'pink',    name:'Photon Pink',  accent:'#FF4FA3', accentDim:'#C23478' },
+  { id:'solar',   name:'Solar Flux',   accent:'#FFC24B', accentDim:'#C98F2E' },
+];
 
 function applyTheme(theme){
   document.body.classList.toggle('theme-light', theme === 'light');
@@ -1145,6 +1263,32 @@ function toggleTheme(){
   }
 }
 applyTheme(localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark');
+
+function applyAccentTheme(id){
+  const theme = ACCENT_THEMES.find(t => t.id === id) || ACCENT_THEMES[0];
+  // Set on body (not :root) so this wins over the body.theme-light override too —
+  // an accent choice should stick regardless of light/dark mode.
+  document.body.style.setProperty('--copper', theme.accent);
+  document.body.style.setProperty('--copper-dim', theme.accentDim);
+}
+function renderThemeSwatches(){
+  const row = document.getElementById('theme-swatch-row');
+  if(!row) return;
+  const current = localStorage.getItem(ACCENT_KEY) || 'copper';
+  row.innerHTML = ACCENT_THEMES.map(t => `
+    <button class="theme-swatch ${t.id === current ? 'selected' : ''}"
+      style="background:${t.accent};box-shadow:0 0 10px ${t.accent}80;"
+      title="${t.name}" onclick="setAccentTheme('${t.id}')"></button>`).join('');
+}
+function setAccentTheme(id){
+  localStorage.setItem(ACCENT_KEY, id);
+  applyAccentTheme(id);
+  renderThemeSwatches();
+  const theme = ACCENT_THEMES.find(t => t.id === id);
+  showToast('Theme: ' + (theme ? theme.name : id));
+}
+applyAccentTheme(localStorage.getItem(ACCENT_KEY) || 'copper');
+renderThemeSwatches();
 
 
 function sanitizeId(p){
@@ -1269,7 +1413,7 @@ function localLoadAll(coll){
     populateCustomerFilter();
   } else if(coll === 'machines'){
     machines = JSON.parse(JSON.stringify(memStore.machines));
-    renderLayoutSections(); renderLayoutMachines(); renderMachineDetail(); renderAnalytics();
+    renderLayoutSections(); renderLayoutMachines(); renderMachineDetail(); renderQuickEntry(); renderAnalytics();
   } else if(coll === 'scrapEntries'){
     scrapEntries = JSON.parse(JSON.stringify(memStore.scrapEntries));
     renderScrapScreen();
@@ -1321,7 +1465,7 @@ function startListening(){
   });
   unsubMachines = listenCollection('machines', map => {
     machines = map;
-    renderLayoutSections(); renderLayoutMachines(); renderMachineDetail(); renderAnalytics();
+    renderLayoutSections(); renderLayoutMachines(); renderMachineDetail(); renderQuickEntry(); renderAnalytics();
   });
   unsubScrap = listenCollection('scrapEntries', map => {
     scrapEntries = map;
@@ -2045,7 +2189,9 @@ function renderLayoutMachines(){
       legend.style.display = 'flex';
       legend.innerHTML = WELDING_COLUMNS.map(col =>
         `<span class="legend-item"><span class="dot" style="background:var(${col.accent});"></span>${col.label}</span>`
-      ).join('');
+      ).join('') +
+        `<span class="legend-item"><span class="dot" style="background:var(--steel);"></span>CDS</span>` +
+        `<span class="legend-item"><span class="dot" style="background:var(--ok);"></span>Green welding</span>`;
     }
 
     const tileHtml = (m) => {
@@ -2062,8 +2208,16 @@ function renderLayoutMachines(){
       `<div class="welding-col" style="--col-accent:var(${col.accent});">${col.machines.map(tileHtml).join('')}</div>`
     ).join('');
 
+    const cdsHtml = `<div class="welding-block-label">Under CDS</div>
+      <div class="welding-sub-row" style="--col-accent:var(--steel);">${WELDING_CDS_GROUP.map(tileHtml).join('')}</div>`;
+
+    const greenHtml = `<div class="welding-block-label">Under green welding</div>
+      <div class="welding-green-grid" style="--col-accent:var(--ok);">${WELDING_GREEN_GROUP.map(g =>
+        `<div style="grid-column:${g.col};grid-row:${g.row};">${tileHtml(g.code)}</div>`
+      ).join('')}</div>`;
+
     list.className = '';
-    list.innerHTML = `<div class="welding-layout-grid">${colsHtml}</div>`;
+    list.innerHTML = `<div class="welding-layout-grid">${colsHtml}</div>${cdsHtml}${greenHtml}`;
     return;
   }
 
@@ -2090,21 +2244,30 @@ function openMachine(code){
 function renderMachineDetail(){
   const listEl = document.getElementById('machine-parts-list');
   const emptyEl = document.getElementById('machine-parts-empty');
+  const clearBtn = document.getElementById('clear-all-parts-btn');
   if(!listEl || !currentMachine) return;
   document.getElementById('layout-machine-title').textContent = currentMachine;
   const rec = machines[currentMachine];
   const list = (rec && rec.parts) || [];
+  if(clearBtn) clearBtn.style.display = list.length > 0 ? 'inline-block' : 'none';
   if(list.length === 0){
     listEl.innerHTML = '';
     if(emptyEl) emptyEl.style.display = 'block';
   } else {
     if(emptyEl) emptyEl.style.display = 'none';
     listEl.innerHTML = list.map(p => `
-      <div class="part-row">
+      <div class="part-row" id="part-row-${p.id}">
         <div><div class="part-row-name">${escapeHtml(p.partNo)} · ${escapeHtml(p.partName||'—')}</div><div class="part-row-sub">since ${p.startedAt}</div></div>
-        <button class="dim-remove" onclick="removeRunningPart('${p.id}')">✕</button>
+        <button class="dim-remove" onclick="animateRowRemoval('part-row-${p.id}', () => removeRunningPart('${p.id}'))">✕</button>
       </div>`).join('');
   }
+}
+
+function animateRowRemoval(rowId, cb){
+  const el = document.getElementById(rowId);
+  if(!el){ cb(); return; }
+  el.classList.add('part-row-exit');
+  setTimeout(cb, 200);
 }
 
 async function addRunningPart(){
@@ -2122,6 +2285,79 @@ async function addRunningPart(){
   }catch(e){
     console.error(e);
     showToast('Add failed: ' + (e && e.message ? e.message : 'unknown error'));
+  }
+}
+
+/* ---------------- Quick Entry ---------------- */
+function openQuickEntry(){
+  if(!currentSection){ showToast('Pick a section first'); return; }
+  qeSelectedMachine = null;
+  showScreen('screen-quick-entry');
+  renderQuickEntry();
+}
+
+function renderQuickEntry(){
+  const s = SECTIONS.find(x => x.id === currentSection);
+  const grid = document.getElementById('qe-machine-grid');
+  const section = document.getElementById('qe-reading-section');
+  const label = document.getElementById('qe-selected-label');
+  if(!s || !grid) return;
+
+  document.getElementById('qe-title').textContent = 'Quick Entry — ' + s.name;
+
+  grid.innerHTML = s.machines.map(m => {
+    const running = machines[m] && (machines[m].parts||[]).length > 0;
+    const selected = m === qeSelectedMachine;
+    return `<div class="qe-machine-btn ${selected ? 'selected' : ''}" onclick="selectQuickEntryMachine('${m}')">
+      ${running ? '<span class="qe-dot"></span>' : ''}${escapeHtml(m)}
+    </div>`;
+  }).join('');
+
+  if(qeSelectedMachine){
+    section.style.display = 'block';
+    label.textContent = qeSelectedMachine;
+  } else {
+    section.style.display = 'none';
+  }
+
+  const chips = document.getElementById('qe-tag-chips');
+  chips.innerHTML = QUICK_TAGS.map(t => `<div class="qe-tag-chip" onclick="insertQuickTag('${t}')">${escapeHtml(t)}</div>`).join('');
+}
+
+function selectQuickEntryMachine(code){
+  qeSelectedMachine = code;
+  renderQuickEntry();
+  const input = document.getElementById('qe-reading');
+  if(input){ input.value = ''; input.focus(); }
+}
+
+function insertQuickTag(text){
+  const input = document.getElementById('qe-reading');
+  if(!input) return;
+  const current = input.value.trim();
+  input.value = current ? (current + ', ' + text) : text;
+  input.focus();
+}
+
+async function saveQuickReading(){
+  if(!qeSelectedMachine){ showToast('Select a machine first'); return; }
+  const input = document.getElementById('qe-reading');
+  const reading = input ? input.value.trim() : '';
+  if(!reading){ showToast('Enter a reading'); return; }
+
+  const machineCode = qeSelectedMachine;
+  const rec = machines[machineCode] || { section: currentSection, parts: [] };
+  const entry = { id: machineCode + '-' + Date.now(), partNo: reading, partName: '—', startedAt: todayKey(), startedAtMs: Date.now() };
+  const newRec = { section: rec.section || currentSection, parts: [...(rec.parts||[]), entry], updated: Date.now() };
+  try{
+    await persistRecord('machines', machineCode, newRec);
+    showToast('Saved to ' + machineCode);
+    qeSelectedMachine = null;
+    if(input) input.value = '';
+    renderQuickEntry();
+  }catch(e){
+    console.error(e);
+    showToast('Save failed: ' + (e && e.message ? e.message : 'unknown error'));
   }
 }
 
@@ -2148,6 +2384,39 @@ async function removeRunningPart(partId){
     console.error(e);
     showToast('Remove failed');
   }
+}
+
+async function clearAllRunningParts(){
+  const rec = machines[currentMachine];
+  if(!rec || !(rec.parts||[]).length) return;
+  const count = rec.parts.length;
+  if(!confirm(`Clear all ${count} running part(s) from ${currentMachine}? This can't be undone.`)) return;
+
+  const rows = rec.parts.map(p => document.getElementById('part-row-' + p.id)).filter(Boolean);
+  rows.forEach(el => el.classList.add('part-row-exit'));
+
+  setTimeout(async () => {
+    const now = Date.now();
+    try{
+      for(const p of rec.parts){
+        const startedAtMs = p.startedAtMs || new Date(p.startedAt).getTime() || now;
+        await persistRecord('sessions', p.id, {
+          machine: currentMachine,
+          partNo: p.partNo,
+          partName: p.partName || '—',
+          startedAt: p.startedAt,
+          startedAtMs,
+          endedAtMs: now,
+          updated: now
+        });
+      }
+      await persistRecord('machines', currentMachine, { section: rec.section || currentSection, parts:[], updated:now });
+      showToast(`Cleared ${count} part(s)`);
+    }catch(e){
+      console.error(e);
+      showToast('Clear failed');
+    }
+  }, 200);
 }
 
 /* =========================================================================
