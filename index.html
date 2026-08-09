@@ -921,6 +921,17 @@
         <div class="field" style="padding:0 0 12px 0;"><label>Part name</label><input type="text" id="lm-partname" placeholder="e.g. Bearing Race"></div>
         <button class="btn-primary" onclick="addRunningPart()">+ Add part</button>
       </div>
+
+      <div class="dim-card" style="margin-top:16px;">
+        <div class="dim-card-head" style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:15px;">Annexure</span>
+          <button class="btn-secondary" style="padding:6px 10px;font-size:11.5px;" onclick="document.getElementById('annexure-import-input').click()">⇧ Import .xlsx</button>
+          <input type="file" id="annexure-import-input" accept=".xlsx,.xls" style="display:none;" onchange="importAnnexureFile(this.files[0]); this.value='';">
+        </div>
+        <div class="field" style="padding:0 0 10px 0;"><input type="text" id="annexure-search" placeholder="Search part number or customer…" oninput="renderMachineAnnexure()"></div>
+        <div id="annexure-list"></div>
+        <div class="spec-empty" id="annexure-empty" style="display:none;">No annexure data for this machine yet — import an .xlsx to add it.</div>
+      </div>
     </main>
   </div>
 
@@ -1151,6 +1162,7 @@ let machines = {};          // machineCode -> { section, parts:[...], updated }
 let scrapEntries = {};      // 'YYYY-MM-DD' -> { date, cost, ppm, updated, by }
 let ncrs = {};               // ncrId -> record
 let sessions = {};           // sessionId -> completed run record {machine, partNo, startedAtMs, endedAtMs}
+let annexures = {};          // '<machine>_<partNumber>' -> grinding setup spec {machine, partNumber, partGroup, customer, ...}
 let currentSection = null;
 let currentMachine = null;
 let qeSelectedMachine = null;
@@ -1161,7 +1173,7 @@ let analyticsTrendChart = null, analyticsMachineChart = null, analyticsSectionCh
 let analyticsPeriod = 'month'; // 'week' | 'month' | 'year'
 let analyticsSection = 'all';  // 'all' | one of SECTIONS[].id
 const SECTION_ACCENT_VAR = { piling:'--copper', grinding:'--steel', welding:'--plum', baking:'--warn', fhp:'--danger' };
-let unsubMachines = null, unsubScrap = null, unsubNcrs = null, unsubSessions = null;
+let unsubMachines = null, unsubScrap = null, unsubNcrs = null, unsubSessions = null, unsubAnnexures = null;
 
 const SECTIONS = [
   { id:'piling',   name:'Piling',   machines:['K15-3','K15-2','K15-1','K50-5','K50-4','K50-1','K50-2','K50-3',
@@ -1339,6 +1351,7 @@ function showAuthGate(msg){
   if(unsubScrap){ unsubScrap(); unsubScrap = null; }
   if(unsubNcrs){ unsubNcrs(); unsubNcrs = null; }
   if(unsubSessions){ unsubSessions(); unsubSessions = null; }
+  if(unsubAnnexures){ unsubAnnexures(); unsubAnnexures = null; }
 }
 function hideAuthGate(){
   document.getElementById('auth-gate').style.display = 'none';
@@ -1405,7 +1418,7 @@ function showConfigBanner(){
 }
 
 /* ---------------- Local fallback (used only if Firebase isn't configured) ---------------- */
-let memStore = { parts:{}, machines:{}, scrapEntries:{}, ncrs:{}, sessions:{} };
+let memStore = { parts:{}, machines:{}, scrapEntries:{}, ncrs:{}, sessions:{}, annexures:{} };
 function localLoadAll(coll){
   if(coll === 'parts'){
     parts = JSON.parse(JSON.stringify(memStore.parts));
@@ -1423,6 +1436,9 @@ function localLoadAll(coll){
   } else if(coll === 'sessions'){
     sessions = JSON.parse(JSON.stringify(memStore.sessions));
     renderAnalytics();
+  } else if(coll === 'annexures'){
+    annexures = JSON.parse(JSON.stringify(memStore.annexures));
+    renderMachineAnnexure();
   }
   updateHubStats();
 }
@@ -1449,7 +1465,7 @@ function startListening(){
   if(!CONFIG_OK || !db){
     showConfigBanner();
     setConnDot('off');
-    ['parts','machines','scrapEntries','ncrs','sessions'].forEach(localLoadAll);
+    ['parts','machines','scrapEntries','ncrs','sessions','annexures'].forEach(localLoadAll);
     return;
   }
   setConnDot('wait');
@@ -1482,6 +1498,10 @@ function startListening(){
   unsubSessions = listenCollection('sessions', map => {
     sessions = map;
     renderAnalytics();
+  });
+  unsubAnnexures = listenCollection('annexures', map => {
+    annexures = map;
+    renderMachineAnnexure();
   });
 }
 
@@ -2239,6 +2259,9 @@ function openMachine(code){
   currentMachine = code;
   showScreen('screen-layout-machine');
   renderMachineDetail();
+  const search = document.getElementById('annexure-search');
+  if(search) search.value = '';
+  renderMachineAnnexure();
 }
 
 function renderMachineDetail(){
@@ -2359,6 +2382,148 @@ async function saveQuickReading(){
     console.error(e);
     showToast('Save failed: ' + (e && e.message ? e.message : 'unknown error'));
   }
+}
+
+/* ---------------- Annexure (machine-wise grinding setup data) ---------------- */
+// Maps a raw header cell (post-normalization) to a canonical field name. Matched by "includes"
+// so small wording differences between machine files ("Thickness" vs "Thickness (in mm)") still work.
+const ANNEXURE_HEADER_ALIASES = [
+  [['part number'], 'partNumber'],
+  [['customer'], 'customer'],
+  [['height'], 'height'],
+  [['radius wheel dia'], 'radiusWheelDia'],
+  [['radius grit size'], 'radiusGritSize'],
+  [['wheel #'], 'wheelNo'],
+  [['radius land'], 'radiusLand'],
+  [['drive speed'], 'driveSpeed'],
+  [['radius depth'], 'radiusDepth'],
+  [['graphite layer'], 'graphiteThickness'],
+  [['grinding finish'], 'grindingFinish'],
+  [['thickness'], 'thickness'],
+];
+const ANNEXURE_FIELDS = [
+  ['customer', 'Customer'],
+  ['height', 'Height'],
+  ['thickness', 'Thickness (mm)'],
+  ['radiusWheelDia', 'Radius wheel dia (mm)'],
+  ['radiusGritSize', 'Radius grit size'],
+  ['wheelNo', 'Wheel #'],
+  ['radiusLand', 'Radius land'],
+  ['driveSpeed', 'Drive speed'],
+  ['radiusDepth', 'Radius depth'],
+  ['graphiteThickness', 'Graphite layer thickness'],
+  ['grindingFinish', 'Grinding finish'],
+];
+let annexureExpanded = {};
+
+function normalizeAnnexureHeader(s){
+  return String(s || '').replace(/\n/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+function mapAnnexureHeader(raw){
+  const norm = normalizeAnnexureHeader(raw);
+  if(!norm) return null;
+  for(const [phrases, field] of ANNEXURE_HEADER_ALIASES){
+    if(phrases.some(p => norm.includes(p))) return field;
+  }
+  return null;
+}
+
+async function importAnnexureFile(file){
+  if(!file) return;
+  if(!currentMachine){ showToast('Open a machine first'); return; }
+  if(typeof XLSX === 'undefined'){ showToast('Spreadsheet reader not loaded'); return; }
+
+  let rows;
+  try{
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type:'array' });
+    const sheetName = wb.SheetNames.includes('Sheet1') ? 'Sheet1' : wb.SheetNames[wb.SheetNames.length - 1];
+    const ws = wb.Sheets[sheetName];
+    if(!ws){ showToast('No data sheet found in that file'); return; }
+    rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+  }catch(e){
+    console.error(e);
+    showToast('Could not read that file');
+    return;
+  }
+
+  let headerRowIdx = -1, colMap = {};
+  for(let r = 0; r < Math.min(rows.length, 15); r++){
+    const map = {};
+    (rows[r] || []).forEach((cell, c) => { const f = mapAnnexureHeader(cell); if(f && map[f] === undefined) map[f] = c; });
+    if(map.partNumber !== undefined){ headerRowIdx = r; colMap = map; break; }
+  }
+  if(headerRowIdx === -1){ showToast('Could not find a "Part number" column in that sheet'); return; }
+
+  const writes = [];
+  let rowCount = 0;
+  for(let r = headerRowIdx + 1; r < rows.length; r++){
+    const row = rows[r] || [];
+    const rawPart = row[colMap.partNumber];
+    if(rawPart === '' || rawPart === undefined || rawPart === null) continue;
+    const partNumbers = String(rawPart).split(/[\/\n]/).map(s => s.trim()).filter(Boolean);
+    if(!partNumbers.length) continue;
+    rowCount++;
+    const partGroup = sanitizeId(currentMachine + '_' + partNumbers[0]);
+    partNumbers.forEach(pn => {
+      const rec = { machine: currentMachine, partNumber: pn, partGroup, updated: Date.now() };
+      Object.keys(colMap).forEach(field => {
+        if(field === 'partNumber') return;
+        const val = row[colMap[field]];
+        if(val !== '' && val !== undefined && val !== null) rec[field] = String(val).trim();
+      });
+      writes.push(persistRecord('annexures', sanitizeId(currentMachine + '_' + pn), rec));
+    });
+  }
+  if(!writes.length){ showToast('No part rows found below the header'); return; }
+  try{
+    await Promise.all(writes);
+    showToast(`Imported ${writes.length} part(s) from ${rowCount} row(s)`);
+    renderMachineAnnexure();
+  }catch(e){
+    console.error(e);
+    showToast('Import partly failed — check console');
+  }
+}
+
+function renderMachineAnnexure(){
+  const list = document.getElementById('annexure-list');
+  const empty = document.getElementById('annexure-empty');
+  const searchEl = document.getElementById('annexure-search');
+  if(!list || !empty || !currentMachine) return;
+  const q = (searchEl ? searchEl.value : '').trim().toLowerCase();
+
+  const entries = Object.entries(annexures)
+    .filter(([id, rec]) => rec.machine === currentMachine)
+    .filter(([id, rec]) => !q || (rec.partNumber||'').toLowerCase().includes(q) || (rec.customer||'').toLowerCase().includes(q))
+    .sort((a, b) => (a[1].partNumber||'').localeCompare(b[1].partNumber||'', undefined, {numeric:true}));
+
+  if(entries.length === 0){
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  list.innerHTML = entries.map(([id, rec]) => {
+    const open = !!annexureExpanded[id];
+    const specRows = ANNEXURE_FIELDS
+      .filter(([key]) => rec[key])
+      .map(([key, label]) => `<div class="spec-row"><span class="spec-key">${escapeHtml(label)}</span><span class="spec-val">${escapeHtml(rec[key])}</span></div>`)
+      .join('');
+    return `
+      <div class="part-row" style="cursor:pointer;" onclick="toggleAnnexureRow('${id}')">
+        <div><div class="part-row-name">${escapeHtml(rec.partNumber)}</div><div class="part-row-sub">${escapeHtml(rec.customer || '—')}</div></div>
+        <span style="color:var(--muted);font-size:12px;">${open ? '▲' : '▼'}</span>
+      </div>
+      ${open ? `<div class="spec-table" style="margin:-4px 0 8px 0;">${specRows || '<div class="spec-row"><span class="spec-key">No further detail on file</span></div>'}</div>` : ''}
+    `;
+  }).join('');
+}
+
+function toggleAnnexureRow(id){
+  annexureExpanded[id] = !annexureExpanded[id];
+  renderMachineAnnexure();
 }
 
 async function removeRunningPart(partId){
