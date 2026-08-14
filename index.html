@@ -2387,18 +2387,32 @@ async function saveQuickReading(){
 /* ---------------- Annexure (machine-wise grinding setup data) ---------------- */
 // Maps a raw header cell (post-normalization) to a canonical field name. Matched by "includes"
 // so small wording differences between machine files ("Thickness" vs "Thickness (in mm)") still work.
+// NOTE ON ORDERING: more specific multi-word phrases must come before shorter generic ones
+// (e.g. "flash height" before "height", "thickness spindle motor rpm" before "thickness"),
+// since the first match in this list wins.
 const ANNEXURE_HEADER_ALIASES = [
+  [['radius wheel dia'], 'radiusWheelDia'],
+  [['radius wheel no'], 'radiusWheelNo'],
+  [['radius grit size'], 'radiusGritSize'],
+  [['radius land'], 'radiusLand'],
+  [['radius depth'], 'radiusDepth'],
+  [['radius spindle motor rpm'], 'radiusSpindleRpm'],
+  [['thickness spindle motor rpm'], 'thicknessSpindleRpm'],
+  [['chamfer spindle motor rpm'], 'chamferSpindleRpm'],
+  [['chamfer wheel angle'], 'chamferWheelAngle'],
+  [['chamfer wheel no'], 'chamferWheelNo'],
+  [['chamfert distance'], 'bottomChamferDistance'],
+  [['bottom chamfer'], 'bottomChamferDistance'],
+  [['chamfer distance'], 'chamferDistance'],
+  [['chamfer angle'], 'chamferAngle'],
+  [['flash height'], 'flashHeight'],
+  [['wheel #'], 'wheelNo'],
+  [['graphite layer'], 'graphiteThickness'],
+  [['grinding finish'], 'grindingFinish'],
+  [['drive speed'], 'driveSpeed'],
   [['part number'], 'partNumber'],
   [['customer'], 'customer'],
   [['height'], 'height'],
-  [['radius wheel dia'], 'radiusWheelDia'],
-  [['radius grit size'], 'radiusGritSize'],
-  [['wheel #'], 'wheelNo'],
-  [['radius land'], 'radiusLand'],
-  [['drive speed'], 'driveSpeed'],
-  [['radius depth'], 'radiusDepth'],
-  [['graphite layer'], 'graphiteThickness'],
-  [['grinding finish'], 'grindingFinish'],
   [['thickness'], 'thickness'],
 ];
 const ANNEXURE_FIELDS = [
@@ -2406,11 +2420,21 @@ const ANNEXURE_FIELDS = [
   ['height', 'Height'],
   ['thickness', 'Thickness (mm)'],
   ['radiusWheelDia', 'Radius wheel dia (mm)'],
+  ['radiusWheelNo', 'Radius wheel #'],
   ['radiusGritSize', 'Radius grit size'],
   ['wheelNo', 'Wheel #'],
   ['radiusLand', 'Radius land'],
-  ['driveSpeed', 'Drive speed'],
   ['radiusDepth', 'Radius depth'],
+  ['driveSpeed', 'Drive speed'],
+  ['thicknessSpindleRpm', 'Thickness spindle motor RPM'],
+  ['radiusSpindleRpm', 'Radius spindle motor RPM'],
+  ['chamferSpindleRpm', 'Chamfer spindle motor RPM'],
+  ['chamferDistance', 'Chamfer distance'],
+  ['chamferAngle', 'Chamfer angle'],
+  ['chamferWheelAngle', 'Chamfer wheel angle'],
+  ['chamferWheelNo', 'Chamfer wheel #'],
+  ['bottomChamferDistance', 'Bottom chamfer distance'],
+  ['flashHeight', 'Flash height'],
   ['graphiteThickness', 'Graphite layer thickness'],
   ['grindingFinish', 'Grinding finish'],
 ];
@@ -2428,57 +2452,196 @@ function mapAnnexureHeader(raw){
   return null;
 }
 
+/* ---- Format A: "vertical" layout — one column literally headed "Part number",
+   one row per part (this is how TWG-1 / G-25's Sheet1 are laid out). ---- */
+
+function isPlausiblePartValue(v){
+  const s = String(v == null ? '' : v).trim();
+  if(!s || s.length > 18) return false;
+  return s.split(/\s+/).filter(Boolean).length <= 2;
+}
+
+// Guards against false positives: some machine files have a control-plan cover sheet
+// that happens to contain a literal "Part Number" label cell but isn't actually a
+// part-per-row data table. Require most of the values below the header to actually
+// look like part-number codes before accepting it.
+function looksLikePartNumberColumn(rows, headerRowIdx, col){
+  const vals = [];
+  for(let r = headerRowIdx + 1; r < rows.length; r++){
+    const v = (rows[r] || [])[col];
+    const s = String(v == null ? '' : v).trim();
+    if(s) vals.push(s);
+  }
+  if(vals.length < 3) return false;
+  return (vals.filter(isPlausiblePartValue).length / vals.length) >= 0.7;
+}
+
+function detectVerticalHeader(rows){
+  for(let r = 0; r < Math.min(rows.length, 15); r++){
+    const map = {};
+    (rows[r] || []).forEach((cell, c) => { const f = mapAnnexureHeader(cell); if(f && map[f] === undefined) map[f] = c; });
+    if(map.partNumber !== undefined && looksLikePartNumberColumn(rows, r, map.partNumber)){
+      return { headerRowIdx: r, colMap: map };
+    }
+  }
+  return null;
+}
+
+function parseVerticalAnnexure(rows, det){
+  const { headerRowIdx, colMap } = det;
+  const entries = [];
+  for(let r = headerRowIdx + 1; r < rows.length; r++){
+    const row = rows[r] || [];
+    const rawPart = row[colMap.partNumber];
+    if(rawPart === '' || rawPart === undefined || rawPart === null) continue;
+    const fields = {};
+    Object.keys(colMap).forEach(field => {
+      if(field === 'partNumber') return;
+      const val = row[colMap[field]];
+      if(val !== '' && val !== undefined && val !== null) fields[field] = String(val).trim();
+    });
+    entries.push({ partsRaw: String(rawPart), fields, extra: [] });
+  }
+  return entries;
+}
+
+/* ---- Format B: "transposed" layout — a "Product" row lists parts across columns,
+   a "Customer" row below it, then one parameter per row going down (this is how most
+   of the other machine annexures — G-31, G-34, G-37, MG-1, MG-2, TGM-1, W-3, W-22, W-27 —
+   are laid out). A single sheet can contain more than one such block stacked vertically
+   (seen on W-3 / W-22 / W-27, which list a grinding/chamfer batch and then a separate
+   welding-parameter batch further down), so every "Product" row found is treated as the
+   start of its own block. ---- */
+const ANNEXURE_STOP_LABELS = ['revision status', 'revision history', 'rev.no', 'issue no', 'prepared by', 'approved by'];
+
+function findAnnexureProductBlocks(rows){
+  const blocks = [];
+  for(let r = 0; r < rows.length; r++){
+    const row = rows[r] || [];
+    let labelCol = -1, labelText = '';
+    for(let c = 0; c < row.length; c++){
+      const s = String(row[c] == null ? '' : row[c]).trim();
+      if(s){ labelCol = c; labelText = normalizeAnnexureHeader(row[c]); break; }
+    }
+    if(labelText === 'product'){
+      const cols = [];
+      for(let c = labelCol + 1; c < row.length; c++){
+        if(String(row[c] == null ? '' : row[c]).trim() !== '') cols.push(c);
+      }
+      if(cols.length) blocks.push({ startRow: r, labelCol, valueCols: cols });
+    }
+  }
+  return blocks;
+}
+
+function buildAnnexureBlockEntries(rows, block, nextStart){
+  const { startRow, labelCol, valueCols } = block;
+  const productRow = rows[startRow] || [];
+  let customerRow = null;
+  for(let r = startRow + 1; r <= startRow + 3 && r < nextStart; r++){
+    const row = rows[r] || [];
+    if(normalizeAnnexureHeader(row[labelCol]) === 'customer'){ customerRow = row; break; }
+  }
+  const entries = valueCols.map(c => ({
+    partsRaw: String(productRow[c] == null ? '' : productRow[c]),
+    fields: {},
+    extra: []
+  }));
+  if(customerRow){
+    valueCols.forEach((c, i) => {
+      const val = String(customerRow[c] == null ? '' : customerRow[c]).trim();
+      if(val) entries[i].fields.customer = val;
+    });
+  }
+  for(let r = startRow + 1; r < nextStart; r++){
+    const row = rows[r] || [];
+    const rawLabel = row[labelCol];
+    const normLabel = normalizeAnnexureHeader(rawLabel);
+    if(!normLabel) continue;
+    if(ANNEXURE_STOP_LABELS.some(s => normLabel.includes(s))) break;
+    if(normLabel === 'customer') continue;
+    const hasValues = valueCols.some(c => String(row[c] == null ? '' : row[c]).trim() !== '');
+    if(!hasValues) continue;
+    const field = mapAnnexureHeader(rawLabel);
+    valueCols.forEach((c, i) => {
+      const val = String(row[c] == null ? '' : row[c]).trim();
+      if(!val) return;
+      if(field) entries[i].fields[field] = val;
+      else entries[i].extra.push({ label: String(rawLabel).trim(), value: val });
+    });
+  }
+  return entries;
+}
+
+function parseTransposedAnnexure(rows){
+  const blocks = findAnnexureProductBlocks(rows);
+  if(!blocks.length) return null;
+  let entries = [];
+  for(let i = 0; i < blocks.length; i++){
+    const nextStart = i + 1 < blocks.length ? blocks[i+1].startRow : rows.length;
+    entries = entries.concat(buildAnnexureBlockEntries(rows, blocks[i], nextStart));
+  }
+  return entries.length ? entries : null;
+}
+
+// Tries every sheet in the workbook (Sheet1 first, since that's the convention most of
+// these files follow) and picks the first one that actually looks like part data —
+// trying the simple vertical layout before the transposed one.
+function detectAnnexureData(wb){
+  const sheetNames = wb.SheetNames.slice().sort((a, b) => (a === 'Sheet1' ? -1 : 0) - (b === 'Sheet1' ? -1 : 0));
+  for(const sn of sheetNames){
+    const ws = wb.Sheets[sn];
+    if(!ws) continue;
+    const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+    const det = detectVerticalHeader(rows);
+    if(det) return { sheetName: sn, entries: parseVerticalAnnexure(rows, det) };
+  }
+  for(const sn of sheetNames){
+    const ws = wb.Sheets[sn];
+    if(!ws) continue;
+    const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+    const entries = parseTransposedAnnexure(rows);
+    if(entries) return { sheetName: sn, entries };
+  }
+  return null;
+}
+
 async function importAnnexureFile(file){
   if(!file) return;
   if(!currentMachine){ showToast('Open a machine first'); return; }
   if(typeof XLSX === 'undefined'){ showToast('Spreadsheet reader not loaded'); return; }
 
-  let rows;
+  let wb;
   try{
     const buf = await file.arrayBuffer();
-    const wb = XLSX.read(buf, { type:'array' });
-    const sheetName = wb.SheetNames.includes('Sheet1') ? 'Sheet1' : wb.SheetNames[wb.SheetNames.length - 1];
-    const ws = wb.Sheets[sheetName];
-    if(!ws){ showToast('No data sheet found in that file'); return; }
-    rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+    wb = XLSX.read(buf, { type:'array' });
   }catch(e){
     console.error(e);
     showToast('Could not read that file');
     return;
   }
 
-  let headerRowIdx = -1, colMap = {};
-  for(let r = 0; r < Math.min(rows.length, 15); r++){
-    const map = {};
-    (rows[r] || []).forEach((cell, c) => { const f = mapAnnexureHeader(cell); if(f && map[f] === undefined) map[f] = c; });
-    if(map.partNumber !== undefined){ headerRowIdx = r; colMap = map; break; }
-  }
-  if(headerRowIdx === -1){ showToast('Could not find a "Part number" column in that sheet'); return; }
+  const found = detectAnnexureData(wb);
+  if(!found){ showToast('Could not find recognizable part data in that file'); return; }
 
   const writes = [];
   let rowCount = 0;
-  for(let r = headerRowIdx + 1; r < rows.length; r++){
-    const row = rows[r] || [];
-    const rawPart = row[colMap.partNumber];
-    if(rawPart === '' || rawPart === undefined || rawPart === null) continue;
-    const partNumbers = String(rawPart).split(/[\/\n]/).map(s => s.trim()).filter(Boolean);
-    if(!partNumbers.length) continue;
+  found.entries.forEach(entry => {
+    const partNumbers = entry.partsRaw.split(/[\/\n]/).map(s => s.trim()).filter(Boolean);
+    if(!partNumbers.length) return;
     rowCount++;
     const partGroup = sanitizeId(currentMachine + '_' + partNumbers[0]);
     partNumbers.forEach(pn => {
       const rec = { machine: currentMachine, partNumber: pn, partGroup, updated: Date.now() };
-      Object.keys(colMap).forEach(field => {
-        if(field === 'partNumber') return;
-        const val = row[colMap[field]];
-        if(val !== '' && val !== undefined && val !== null) rec[field] = String(val).trim();
-      });
+      Object.assign(rec, entry.fields);
+      if(entry.extra && entry.extra.length) rec.extra = entry.extra;
       writes.push(persistRecord('annexures', sanitizeId(currentMachine + '_' + pn), rec));
     });
-  }
-  if(!writes.length){ showToast('No part rows found below the header'); return; }
+  });
+  if(!writes.length){ showToast('No part rows found in that sheet'); return; }
   try{
     await Promise.all(writes);
-    showToast(`Imported ${writes.length} part(s) from ${rowCount} row(s)`);
+    showToast(`Imported ${writes.length} part(s) from ${rowCount} row(s) (sheet "${found.sheetName}")`);
     renderMachineAnnexure();
   }catch(e){
     console.error(e);
@@ -2511,12 +2674,15 @@ function renderMachineAnnexure(){
       .filter(([key]) => rec[key])
       .map(([key, label]) => `<div class="spec-row"><span class="spec-key">${escapeHtml(label)}</span><span class="spec-val">${escapeHtml(rec[key])}</span></div>`)
       .join('');
+    const extraRows = (rec.extra || [])
+      .map(({label, value}) => `<div class="spec-row"><span class="spec-key">${escapeHtml(label)}</span><span class="spec-val">${escapeHtml(value)}</span></div>`)
+      .join('');
     return `
       <div class="part-row" style="cursor:pointer;" onclick="toggleAnnexureRow('${id}')">
         <div><div class="part-row-name">${escapeHtml(rec.partNumber)}</div><div class="part-row-sub">${escapeHtml(rec.customer || '—')}</div></div>
         <span style="color:var(--muted);font-size:12px;">${open ? '▲' : '▼'}</span>
       </div>
-      ${open ? `<div class="spec-table" style="margin:-4px 0 8px 0;">${specRows || '<div class="spec-row"><span class="spec-key">No further detail on file</span></div>'}</div>` : ''}
+      ${open ? `<div class="spec-table" style="margin:-4px 0 8px 0;">${specRows + extraRows || '<div class="spec-row"><span class="spec-key">No further detail on file</span></div>'}</div>` : ''}
     `;
   }).join('');
 }
