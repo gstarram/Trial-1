@@ -2479,7 +2479,11 @@ function mapAnnexureHeader(raw){
 function isPlausiblePartValue(v){
   const s = String(v == null ? '' : v).trim();
   if(!s || s.length > 18) return false;
-  return s.split(/\s+/).filter(Boolean).length <= 2;
+  if(s.split(/\s+/).filter(Boolean).length > 2) return false;
+  // Real part numbers/codes always contain at least one digit (e.g. "9203-0", "EF-120").
+  // This filters out stray text labels (like "Carbon Brush", "Refer Annexure") that a
+  // boilerplate control-plan cover sheet can otherwise pass off as a plausible part column.
+  return /\d/.test(s);
 }
 
 // Guards against false positives: some machine files have a control-plan cover sheet
@@ -2544,9 +2548,18 @@ function findAnnexureProductBlocks(rows){
       const s = String(row[c] == null ? '' : row[c]).trim();
       if(s){ labelCol = c; labelText = normalizeAnnexureHeader(row[c]); break; }
     }
-    if(labelText === 'product'){
+    // Accept "Product" (the common case), "Assy Part No." (seen on JW-1), and "AVO JDE Part No."
+    // (seen on W-25/W-23/W-35/W-36/W-37/W-40) as anchors — all mark the same kind of
+    // one-row-of-parts-across-columns block. Note some of these sheets also have a separate
+    // "Customer Part No." row just above the anchor; that row is intentionally NOT matched here
+    // (it's the customer's own part number, not AVO's internal one) so it's simply skipped.
+    if(labelText === 'product' || labelText.includes('assy part') || labelText.includes('avo jde part')){
       const cols = [];
-      for(let c = labelCol + 1; c < row.length; c++){
+      // Safety cap: some source files have corrupted/oversized used-ranges (stray formatting
+      // dragged across thousands of hidden columns) that repeat the same handful of parts
+      // hundreds of times. No real machine setup runs more than a couple dozen parts at once,
+      // so stop scanning well before that becomes a problem.
+      for(let c = labelCol + 1; c < row.length && cols.length < 60; c++){
         if(String(row[c] == null ? '' : row[c]).trim() !== '') cols.push(c);
       }
       if(cols.length) blocks.push({ startRow: r, labelCol, valueCols: cols });
@@ -2605,6 +2618,22 @@ function parseTransposedAnnexure(rows){
   return entries.length ? entries : null;
 }
 
+// Collapses exact-duplicate entries (same parts + same fields). Guards against source files
+// with a corrupted/oversized used-range — a stray formatting drag can repeat the same block
+// of parts hundreds or thousands of times across hidden columns — which would otherwise try
+// to write the same handful of parts as thousands of records.
+function dedupeAnnexureEntries(entries){
+  const seen = new Set();
+  const out = [];
+  for(const e of entries){
+    const key = JSON.stringify([e.partsRaw, e.fields, e.extra || []]);
+    if(seen.has(key)) continue;
+    seen.add(key);
+    out.push(e);
+  }
+  return out;
+}
+
 // Tries every sheet in the workbook (Sheet1 first, since that's the convention most of
 // these files follow) and picks the first one that actually looks like part data —
 // trying the simple vertical layout before the transposed one.
@@ -2615,14 +2644,14 @@ function detectAnnexureData(wb){
     if(!ws) continue;
     const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
     const det = detectVerticalHeader(rows);
-    if(det) return { sheetName: sn, entries: parseVerticalAnnexure(rows, det) };
+    if(det) return { sheetName: sn, entries: dedupeAnnexureEntries(parseVerticalAnnexure(rows, det)) };
   }
   for(const sn of sheetNames){
     const ws = wb.Sheets[sn];
     if(!ws) continue;
     const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
     const entries = parseTransposedAnnexure(rows);
-    if(entries) return { sheetName: sn, entries };
+    if(entries) return { sheetName: sn, entries: dedupeAnnexureEntries(entries) };
   }
   return null;
 }
@@ -2641,18 +2670,23 @@ function setAnnexureSection(id){
   renderAnnexure();
 }
 
+// Display-name overrides for the Annexure tabs only — Machine Layout, Analytics, etc. keep
+// using SECTIONS[].name as-is (still "FHP" there, since that's what the machines are called).
+const ANNEXURE_SECTION_LABELS = { fhp: 'End fusion' };
+function annexureSectionLabel(s){ return ANNEXURE_SECTION_LABELS[s.id] || s.name; }
+
 function renderAnnexureSectionTabs(){
   const wrap = document.getElementById('annexure-section-tabs');
   if(!wrap) return;
   wrap.innerHTML = SECTIONS.map(s => {
     const active = annexureSection === s.id;
     const accent = `var(${SECTION_ACCENT_VAR[s.id]})`;
-    return `<button class="section-chip ${active?'active':''}" style="--chip-accent:${accent};" onclick="setAnnexureSection('${s.id}')"><span class="chip-dot" style="background:${accent};"></span>${escapeHtml(s.name)}</button>`;
+    return `<button class="section-chip ${active?'active':''}" style="--chip-accent:${accent};" onclick="setAnnexureSection('${s.id}')"><span class="chip-dot" style="background:${accent};"></span>${escapeHtml(annexureSectionLabel(s))}</button>`;
   }).join('');
   const label = document.getElementById('annexure-section-label');
   if(label){
     const s = SECTIONS.find(x => x.id === annexureSection);
-    label.textContent = s ? s.name : 'Annexure';
+    label.textContent = s ? annexureSectionLabel(s) : 'Annexure';
   }
 }
 
