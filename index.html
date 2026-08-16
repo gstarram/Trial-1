@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 <title>Brush Spec — Dimensional Reference</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#14171A">
-<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -687,6 +684,12 @@
           <div class="hub-tile-stat" id="hub-stat-analytics">—</div>
           <div class="hub-tile-sub">parts run this month</div>
         </div>
+        <div class="hub-tile" style="--tile-accent:var(--sand);" onclick="openAnnexure();">
+          <div class="hub-tile-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M15 3v5h5"/><path d="M9 13h6M9 17h6"/></svg></div>
+          <div class="hub-tile-title">Annexure</div>
+          <div class="hub-tile-stat" id="hub-stat-annexure">—</div>
+          <div class="hub-tile-sub">parts on file</div>
+        </div>
       </div>
       <div class="whoami" style="margin-top:18px;">Logging edits as <b id="whoami-name">—</b> · <button onclick="promptUserName()">change</button> · <span id="auth-account"></span> <button class="signout-btn" onclick="signOutUser()">sign out</button></div>
 
@@ -924,17 +927,6 @@
         <div class="field" style="padding:0 0 12px 0;"><label>Part name</label><input type="text" id="lm-partname" placeholder="e.g. Bearing Race"></div>
         <button class="btn-primary" onclick="addRunningPart()">+ Add part</button>
       </div>
-
-      <div class="dim-card" style="margin-top:16px;">
-        <div class="dim-card-head" style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">
-          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:15px;">Annexure</span>
-          <button class="btn-secondary" style="padding:6px 10px;font-size:11.5px;" onclick="document.getElementById('annexure-import-input').click()">⇧ Import .xlsx</button>
-          <input type="file" id="annexure-import-input" accept=".xlsx,.xls" style="display:none;" onchange="importAnnexureFile(this.files[0]); this.value='';">
-        </div>
-        <div class="field" style="padding:0 0 10px 0;"><input type="text" id="annexure-search" placeholder="Search part number or customer…" oninput="renderMachineAnnexure()"></div>
-        <div id="annexure-list"></div>
-        <div class="spec-empty" id="annexure-empty" style="display:none;">No annexure data for this machine yet — import an .xlsx to add it.</div>
-      </div>
     </main>
   </div>
 
@@ -1123,6 +1115,30 @@
     </main>
   </div>
 
+  <!-- ============ ANNEXURE (section-wide) ============ -->
+  <div class="screen" id="screen-annexure">
+    <div class="topbar">
+      <button class="back-btn" onclick="goHub()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="topbar-title">Annexure</div>
+    </div>
+    <main style="padding-top:16px;">
+      <div class="chip-tabs" id="annexure-section-tabs"></div>
+
+      <div class="dim-card">
+        <div class="dim-card-head" style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:15px;" id="annexure-section-label">Grinding</span>
+          <button class="btn-secondary" style="padding:6px 10px;font-size:11.5px;" onclick="document.getElementById('annexure-import-input').click()">⇧ Import .xlsx</button>
+          <input type="file" id="annexure-import-input" accept=".xlsx,.xls" style="display:none;" onchange="importAnnexureFile(this.files[0]); this.value='';">
+        </div>
+        <div class="field" style="padding:0 0 10px 0;"><input type="text" id="annexure-search" placeholder="Search part number or customer…" oninput="renderAnnexure()"></div>
+        <div id="annexure-list"></div>
+        <div class="spec-empty" id="annexure-empty" style="display:none;">No annexure data for this section yet — import an .xlsx to add it.</div>
+      </div>
+    </main>
+  </div>
+
 </div>
 <div class="toast" id="toast"></div>
 
@@ -1165,9 +1181,10 @@ let machines = {};          // machineCode -> { section, parts:[...], updated }
 let scrapEntries = {};      // 'YYYY-MM-DD' -> { date, cost, ppm, updated, by }
 let ncrs = {};               // ncrId -> record
 let sessions = {};           // sessionId -> completed run record {machine, partNo, startedAtMs, endedAtMs}
-let annexures = {};          // '<machine>_<partNumber>' -> grinding setup spec {machine, partNumber, partGroup, customer, ...}
+let annexures = {};          // '<section>_<partNumber>' -> grinding setup spec {section, partNumber, partGroup, customer, ...}
 let currentSection = null;
 let currentMachine = null;
+let annexureSection = 'grinding';
 let qeSelectedMachine = null;
 let currentNcr = null;
 let pendingNcrImage = null;
@@ -1441,7 +1458,7 @@ function localLoadAll(coll){
     renderAnalytics();
   } else if(coll === 'annexures'){
     annexures = JSON.parse(JSON.stringify(memStore.annexures));
-    renderMachineAnnexure();
+    renderAnnexure();
   }
   updateHubStats();
 }
@@ -1504,7 +1521,7 @@ function startListening(){
   });
   unsubAnnexures = listenCollection('annexures', map => {
     annexures = map;
-    renderMachineAnnexure();
+    renderAnnexure();
   });
 }
 
@@ -1596,6 +1613,10 @@ function updateHubStats(){
     }));
     analyticsEl.textContent = count;
   }
+
+  // Annexure — total parts on file across all sections
+  const annexureEl = document.getElementById('hub-stat-annexure');
+  if(annexureEl) annexureEl.textContent = Object.keys(annexures).length;
 }
 function placeholderSVG(){
   return '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
@@ -2262,9 +2283,6 @@ function openMachine(code){
   currentMachine = code;
   showScreen('screen-layout-machine');
   renderMachineDetail();
-  const search = document.getElementById('annexure-search');
-  if(search) search.value = '';
-  renderMachineAnnexure();
 }
 
 function renderMachineDetail(){
@@ -2609,9 +2627,37 @@ function detectAnnexureData(wb){
   return null;
 }
 
+function openAnnexure(){
+  showScreen('screen-annexure');
+  renderAnnexureSectionTabs();
+  const search = document.getElementById('annexure-search');
+  if(search) search.value = '';
+  renderAnnexure();
+}
+
+function setAnnexureSection(id){
+  annexureSection = id;
+  renderAnnexureSectionTabs();
+  renderAnnexure();
+}
+
+function renderAnnexureSectionTabs(){
+  const wrap = document.getElementById('annexure-section-tabs');
+  if(!wrap) return;
+  wrap.innerHTML = SECTIONS.map(s => {
+    const active = annexureSection === s.id;
+    const accent = `var(${SECTION_ACCENT_VAR[s.id]})`;
+    return `<button class="section-chip ${active?'active':''}" style="--chip-accent:${accent};" onclick="setAnnexureSection('${s.id}')"><span class="chip-dot" style="background:${accent};"></span>${escapeHtml(s.name)}</button>`;
+  }).join('');
+  const label = document.getElementById('annexure-section-label');
+  if(label){
+    const s = SECTIONS.find(x => x.id === annexureSection);
+    label.textContent = s ? s.name : 'Annexure';
+  }
+}
+
 async function importAnnexureFile(file){
   if(!file) return;
-  if(!currentMachine){ showToast('Open a machine first'); return; }
   if(typeof XLSX === 'undefined'){ showToast('Spreadsheet reader not loaded'); return; }
 
   let wb;
@@ -2633,34 +2679,34 @@ async function importAnnexureFile(file){
     const partNumbers = entry.partsRaw.split(/[\/\n]/).map(s => s.trim()).filter(Boolean);
     if(!partNumbers.length) return;
     rowCount++;
-    const partGroup = sanitizeId(currentMachine + '_' + partNumbers[0]);
+    const partGroup = sanitizeId(annexureSection + '_' + partNumbers[0]);
     partNumbers.forEach(pn => {
-      const rec = { machine: currentMachine, partNumber: pn, partGroup, updated: Date.now() };
+      const rec = { section: annexureSection, partNumber: pn, partGroup, updated: Date.now() };
       Object.assign(rec, entry.fields);
       if(entry.extra && entry.extra.length) rec.extra = entry.extra;
-      writes.push(persistRecord('annexures', sanitizeId(currentMachine + '_' + pn), rec));
+      writes.push(persistRecord('annexures', sanitizeId(annexureSection + '_' + pn), rec));
     });
   });
   if(!writes.length){ showToast('No part rows found in that sheet'); return; }
   try{
     await Promise.all(writes);
     showToast(`Imported ${writes.length} part(s) from ${rowCount} row(s) (sheet "${found.sheetName}")`);
-    renderMachineAnnexure();
+    renderAnnexure();
   }catch(e){
     console.error(e);
     showToast('Import partly failed — check console');
   }
 }
 
-function renderMachineAnnexure(){
+function renderAnnexure(){
   const list = document.getElementById('annexure-list');
   const empty = document.getElementById('annexure-empty');
   const searchEl = document.getElementById('annexure-search');
-  if(!list || !empty || !currentMachine) return;
+  if(!list || !empty) return;
   const q = (searchEl ? searchEl.value : '').trim().toLowerCase();
 
   const entries = Object.entries(annexures)
-    .filter(([id, rec]) => rec.machine === currentMachine)
+    .filter(([id, rec]) => rec.section === annexureSection)
     .filter(([id, rec]) => !q || (rec.partNumber||'').toLowerCase().includes(q) || (rec.customer||'').toLowerCase().includes(q))
     .sort((a, b) => (a[1].partNumber||'').localeCompare(b[1].partNumber||'', undefined, {numeric:true}));
 
@@ -2692,7 +2738,7 @@ function renderMachineAnnexure(){
 
 function toggleAnnexureRow(id){
   annexureExpanded[id] = !annexureExpanded[id];
-  renderMachineAnnexure();
+  renderAnnexure();
 }
 
 async function removeRunningPart(partId){
@@ -3355,13 +3401,6 @@ if(!CONFIG_OK || !auth){
   hideAuthGate();
   startListening();
 }
-</script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js');
-    });
-  }
 </script>
 </body>
 </html>
